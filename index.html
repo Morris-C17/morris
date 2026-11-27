@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>毛学成 Morris | 工业软件 · 具身智能 · 算力基建</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700;900&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      /* 主体色彩严格锚定 C65 M100 Y0 K20 -> RGB(71, 0, 204) -> #4700CC */
+      --cmyk-primary: #4700CC;
+      --cmyk-deep: #2B0080;
+      --cmyk-vivid: #6F2BFF;
+      --cmyk-light: #A57BFF;
+      --cmyk-soft: #D6C4FF;
+      --cmyk-glow: rgba(71, 0, 204, 0.52);
+      --cmyk-tint: rgba(71, 0, 204, 0.14);
+
+      --bg-void: #06050B;
+      --bg-surface: #0C0A16;
+      --bg-elevated: rgba(18, 15, 31, 0.78);
+      --border-subtle: rgba(165, 123, 255, 0.15);
+      --border-strong: rgba(111, 43, 255, 0.5);
+
+      --text-primary: #F7F5FF;
+      --text-secondary: #B4ACD1;
+      --text-muted: #7C739E;
+
+      --gold-accent: #E2C68D;
+      --gold-tint: rgba(226, 198, 141, 0.12);
+
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --transition: all 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      background-color: var(--bg-void);
+      color: var(--text-primary);
+      font-family: 'Inter', 'Noto Sans SC', 'Noto Sans JP', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    body {
+      position: relative;
+      line-height: 1.65;
+      background:
+        radial-gradient(circle at 15% 10%, rgba(71, 0, 204, 0.24) 0%, transparent 42%),
+        radial-gradient(circle at 85% 22%, rgba(111, 43, 255, 0.14) 0%, transparent 38%),
+        radial-gradient(circle at 50% 80%, rgba(71, 0, 204, 0.12) 0%, transparent 48%),
+        var(--bg-void);
+    }
+
+    .bg-grid {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        linear-gradient(rgba(165, 123, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(165, 123, 255, 0.035) 1px, transparent 1px);
+      background-size: 56px 56px;
+      mask-image: radial-gradient(ellipse 85% 75% at 50% 35%, #000 30%, transparent 100%);
+    }
+
+    canvas#particle-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: 0.65; }
+
+    .container { position: relative; z-index: 2; max-width: 1220px; margin: 0 auto; padding: 0 28px; }
+
+    header.navbar {
+      position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+      width: calc(100% - 40px); max-width: 1200px; z-index: 100;
+      background: rgba(12, 10, 22, 0.76);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-subtle); border-radius: 999px; padding: 9px 18px;
+      display: flex; align-items: center; justify-content: space-between; gap: 14px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(71, 0, 204, 0.15) inset;
+    }
+
+    .nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text-primary); font-weight: 700; font-size: 14px; white-space: nowrap; }
+    .brand-mark {
+      width: 32px; height: 32px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--cmyk-primary), var(--cmyk-vivid));
+      display: grid; place-items: center; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: #fff;
+      box-shadow: 0 0 20px var(--cmyk-glow);
+    }
+
+    .nav-links { display: flex; align-items: center; gap: 4px; }
+    .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 13px; font-weight: 500; padding: 6px 12px; border-radius: 999px; transition: var(--transition); white-space: nowrap; }
+    .nav-links a:hover { color: var(--text-primary); background: var(--cmyk-tint); }
+
+    .nav-right { display: flex; align-items: center; gap: 10px; }
+
+    .lang-switcher {
+      display: inline-flex; align-items: center; gap: 2px; padding: 3px;
+      border-radius: 999px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border-subtle);
+    }
+    .lang-btn {
+      border: none; background: transparent; color: var(--text-secondary);
+      font-size: 11.5px; font-weight: 600; padding: 5px 9px; border-radius: 999px;
+      cursor: pointer; transition: var(--transition); white-space: nowrap;
+    }
+    .lang-btn:hover { color: #fff; }
+    .lang-btn.active {
+      background: linear-gradient(135deg, var(--cmyk-primary), var(--cmyk-vivid));
+      color: #fff; box-shadow: 0 2px 10px var(--cmyk-glow);
+    }
+
+    .nav-cta {
+      display: inline-flex; align-items: center; padding: 7px 15px; border-radius: 999px;
+      background: linear-gradient(135deg, var(--cmyk-primary), var(--cmyk-vivid)); color: #fff;
+      text-decoration: none; font-size: 12.5px; font-weight: 600; box-shadow: 0 4px 18px var(--cmyk-glow);
+      transition: var(--transition); white-space: nowrap;
+    }
+    .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 6px 26px rgba(111, 43, 255, 0.65); }
+
+    .hero { padding: 148px 0 84px; display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 48px; align-items: center; }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 10px; padding: 6px 14px; border-radius: 999px;
+      background: var(--cmyk-tint); border: 1px solid rgba(165, 123, 255, 0.28);
+      font-size: 12.5px; font-weight: 600; color: var(--cmyk-soft); letter-spacing: 0.06em; margin-bottom: 22px;
+    }
+    .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cmyk-vivid); box-shadow: 0 0 12px var(--cmyk-vivid); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(1.35); } }
+
+    .hero h1 { font-size: clamp(36px, 4.8vw, 58px); font-weight: 800; line-height: 1.14; letter-spacing: -0.02em; margin-bottom: 16px; }
+    .hero h1 .gradient-text { background: linear-gradient(120deg, #FFFFFF 15%, var(--cmyk-light) 60%, var(--cmyk-vivid) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero-subtitle { font-size: 17.5px; color: var(--text-secondary); max-width: 640px; margin-bottom: 28px; }
+    .hero-subtitle strong { color: var(--text-primary); font-weight: 600; }
+
+    .role-pills { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 34px; }
+    .role-pill { padding: 8px 15px; border-radius: 10px; background: var(--bg-elevated); border: 1px solid var(--border-subtle); font-size: 13px; color: var(--text-secondary); display: inline-flex; align-items: center; gap: 8px; }
+    .role-pill span.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cmyk-light); }
+
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 14px; }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 10px; padding: 13px 26px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--cmyk-primary) 0%, var(--cmyk-vivid) 100%); color: #fff; font-weight: 600; font-size: 14.5px;
+      text-decoration: none; border: 1px solid rgba(255, 255, 255, 0.14); box-shadow: 0 10px 30px var(--cmyk-glow); transition: var(--transition); cursor: pointer;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 38px rgba(111, 43, 255, 0.65); }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 10px; padding: 13px 24px; border-radius: 12px;
+      background: var(--bg-elevated); color: var(--text-primary); font-weight: 500; font-size: 14.5px;
+      text-decoration: none; border: 1px solid var(--border-subtle); transition: var(--transition); cursor: pointer;
+    }
+    .btn-secondary:hover { border-color: var(--border-strong); background: var(--cmyk-tint); }
+
+    .exec-card {
+      position: relative; background: linear-gradient(160deg, rgba(28, 20, 56, 0.85) 0%, rgba(12, 10, 22, 0.92) 100%);
+      border: 1px solid rgba(165, 123, 255, 0.25); border-radius: var(--radius-lg); padding: 30px;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55), 0 0 60px rgba(71, 0, 204, 0.22); overflow: hidden;
+    }
+    .exec-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--cmyk-primary), var(--cmyk-vivid), var(--gold-accent)); z-index: 4; }
+
+    /* 商务人像舞台（C65 M100 Y0 K20 轮廓光） */
+    .portrait-stage {
+      position: relative;
+      height: 250px;
+      margin: -30px -30px 20px -30px;
+      background:
+        radial-gradient(circle at 50% 42%, rgba(111, 43, 255, 0.58) 0%, rgba(71, 0, 204, 0.25) 48%, transparent 76%),
+        linear-gradient(180deg, rgba(24, 16, 48, 0.9) 0%, rgba(12, 10, 22, 0.98) 100%);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      overflow: hidden;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .portrait-stage img {
+      height: 94%;
+      width: auto;
+      object-fit: contain;
+      object-position: bottom center;
+      filter: drop-shadow(0 0 24px rgba(71, 0, 204, 0.55));
+      -webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent 100%);
+      mask-image: linear-gradient(to bottom, #000 82%, transparent 100%);
+      transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .exec-card:hover .portrait-stage img {
+      transform: scale(1.03);
+    }
+
+    .portrait-stage .cmyk-badge {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      z-index: 3;
+      backdrop-filter: blur(8px);
+    }
+
+    .exec-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--border-subtle); }
+    .avatar-monogram { width: 58px; height: 58px; border-radius: 16px; background: linear-gradient(135deg, var(--cmyk-primary), #7D3CFF); display: grid; place-items: center; font-size: 20px; font-weight: 800; color: #fff; box-shadow: 0 8px 24px var(--cmyk-glow); }
+    .cmyk-badge { font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 5px 10px; border-radius: 6px; background: rgba(71, 0, 204, 0.25); border: 1px solid rgba(165, 123, 255, 0.35); color: var(--cmyk-soft); }
+    .exec-meta-list { display: flex; flex-direction: column; gap: 13px; }
+    .exec-meta-item { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 13.5px; }
+    .exec-meta-label { color: var(--text-muted); flex-shrink: 0; }
+    .exec-meta-val { color: var(--text-primary); font-weight: 500; text-align: right; }
+    .exec-motto { margin-top: 20px; padding: 14px 16px; border-radius: 12px; background: rgba(71, 0, 204, 0.16); border-left: 3px solid var(--cmyk-vivid); font-size: 13px; color: var(--cmyk-soft); font-style: italic; }
+
+    .kpi-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 88px; }
+    .kpi-card { background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 22px 20px; transition: var(--transition); }
+    .kpi-card:hover { border-color: var(--border-strong); transform: translateY(-3px); box-shadow: 0 12px 32px rgba(71, 0, 204, 0.2); }
+    .kpi-num { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 6px; display: flex; align-items: baseline; gap: 4px; }
+    .kpi-num span.unit { font-size: 14px; color: var(--cmyk-light); font-weight: 600; }
+    .kpi-label { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
+
+    .section { padding: 54px 0; }
+    .section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 36px; flex-wrap: wrap; }
+    .section-kicker { font-family: 'JetBrains Mono', monospace; font-size: 12px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--cmyk-light); margin-bottom: 8px; display: block; }
+    .section-title { font-size: clamp(26px, 3vw, 36px); font-weight: 700; letter-spacing: -0.01em; }
+    .section-desc { color: var(--text-secondary); max-width: 520px; font-size: 14.5px; }
+
+    .ventures-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+    .venture-card { background: linear-gradient(155deg, rgba(22, 17, 42, 0.85), rgba(10, 9, 18, 0.92)); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 32px; transition: var(--transition); }
+    .venture-card:hover { border-color: var(--border-strong); box-shadow: 0 18px 48px rgba(71, 0, 204, 0.22); }
+    .venture-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 18px; }
+    .venture-badge { padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--cmyk-tint); color: var(--cmyk-soft); border: 1px solid rgba(165, 123, 255, 0.28); white-space: nowrap; }
+    .venture-card h3 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .venture-role { font-size: 13.5px; color: var(--gold-accent); font-weight: 500; margin-bottom: 16px; }
+    .venture-card p { color: var(--text-secondary); font-size: 14.5px; margin-bottom: 20px; }
+
+    .tag-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tag { font-size: 12px; padding: 4px 10px; border-radius: 6px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); color: var(--text-secondary); }
+
+    .filter-bar { display: flex; flex-wrap: wrap; gap: 8px; }
+    .filter-btn { padding: 8px 16px; border-radius: 999px; border: 1px solid var(--border-subtle); background: var(--bg-elevated); color: var(--text-secondary); font-size: 13px; font-weight: 500; cursor: pointer; transition: var(--transition); }
+    .filter-btn:hover, .filter-btn.active { background: var(--cmyk-primary); border-color: var(--cmyk-vivid); color: #fff; box-shadow: 0 4px 16px var(--cmyk-glow); }
+
+    .projects-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+    .project-card { background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 26px; display: flex; flex-direction: column; justify-content: space-between; transition: var(--transition); cursor: pointer; }
+    .project-card:hover { transform: translateY(-4px); border-color: var(--border-strong); box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45), 0 0 28px rgba(71, 0, 204, 0.25); }
+    .project-card.hidden { display: none; }
+    .proj-cat { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: var(--cmyk-light); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+    .proj-title { font-size: 19px; font-weight: 700; margin-bottom: 10px; line-height: 1.35; }
+    .proj-summary { font-size: 13.8px; color: var(--text-secondary); margin-bottom: 18px; }
+    .proj-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px; border-radius: 10px; background: rgba(71, 0, 204, 0.1); border: 1px solid rgba(165, 123, 255, 0.14); margin-bottom: 16px; }
+    .pm-item strong { display: block; font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #fff; }
+    .pm-item span { font-size: 11.5px; color: var(--text-muted); }
+    .proj-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.06); font-size: 12.5px; color: var(--cmyk-soft); font-weight: 500; }
+
+    .tabs-nav { display: inline-flex; padding: 5px; border-radius: 14px; background: var(--bg-surface); border: 1px solid var(--border-subtle); margin-bottom: 28px; flex-wrap: wrap; gap: 4px; }
+    .tab-btn { padding: 10px 20px; border-radius: 10px; border: none; background: transparent; color: var(--text-secondary); font-size: 14px; font-weight: 600; cursor: pointer; transition: var(--transition); }
+    .tab-btn.active { background: linear-gradient(135deg, var(--cmyk-primary), var(--cmyk-vivid)); color: #fff; box-shadow: 0 4px 16px var(--cmyk-glow); }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; animation: fadeUp 0.35s ease; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .ip-table-wrap { background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+    th { padding: 16px 20px; background: rgba(71, 0, 204, 0.16); color: var(--cmyk-soft); font-weight: 600; font-size: 12.5px; border-bottom: 1px solid var(--border-subtle); }
+    td { padding: 15px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); color: var(--text-secondary); }
+    td strong { color: var(--text-primary); }
+    tr:last-child td { border-bottom: none; }
+
+    .status-pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+    .status-granted { background: rgba(16, 185, 129, 0.14); color: #6EE7B7; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .status-review { background: var(--cmyk-tint); color: var(--cmyk-soft); border: 1px solid rgba(165, 123, 255, 0.3); }
+
+    .domain-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 20px; }
+    .domain-chip { background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 14px 16px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; color: var(--cmyk-soft); transition: var(--transition); }
+    .domain-chip:hover { border-color: var(--cmyk-vivid); background: var(--cmyk-tint); }
+
+    .awards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .award-item { background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 18px 22px; display: flex; align-items: flex-start; gap: 16px; }
+    .award-year { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 700; padding: 4px 10px; border-radius: 8px; background: var(--gold-tint); color: var(--gold-accent); border: 1px solid rgba(226, 198, 141, 0.25); flex-shrink: 0; }
+    .award-item h4 { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+    .award-item p { font-size: 13px; color: var(--text-muted); }
+
+    .eco-box { background: linear-gradient(135deg, rgba(71, 0, 204, 0.22) 0%, rgba(15, 13, 26, 0.95) 60%); border: 1px solid rgba(165, 123, 255, 0.28); border-radius: var(--radius-lg); padding: 36px; display: grid; grid-template-columns: 1fr 1.2fr; gap: 32px; align-items: center; }
+    .partner-cloud { display: flex; flex-wrap: wrap; gap: 10px; }
+    .partner-pill { padding: 9px 15px; border-radius: 10px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); font-size: 13px; font-weight: 500; color: var(--text-primary); }
+
+    footer.contact-footer { margin-top: 64px; padding: 56px 0 42px; border-top: 1px solid var(--border-subtle); }
+    .contact-card { background: linear-gradient(145deg, rgba(71, 0, 204, 0.28), rgba(14, 11, 26, 0.96)); border: 1px solid var(--border-strong); border-radius: var(--radius-lg); padding: 40px; display: flex; justify-content: space-between; align-items: center; gap: 32px; flex-wrap: wrap; box-shadow: 0 20px 60px rgba(71, 0, 204, 0.22); }
+    .contact-info-row { display: flex; flex-wrap: wrap; gap: 14px; }
+    .copy-pill { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; border-radius: 12px; background: rgba(10, 8, 18, 0.75); border: 1px solid var(--border-subtle); color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 13.5px; cursor: pointer; transition: var(--transition); }
+    .copy-pill:hover { border-color: var(--cmyk-vivid); background: var(--cmyk-tint); }
+    .copyright { margin-top: 28px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; font-size: 12.5px; color: var(--text-muted); }
+
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(4, 3, 9, 0.82); backdrop-filter: blur(12px); z-index: 200; display: none; align-items: center; justify-content: center; padding: 24px; }
+    .modal-backdrop.open { display: flex; animation: fadeIn 0.22s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal-box { width: 100%; max-width: 720px; max-height: 86vh; overflow-y: auto; background: #100D1E; border: 1px solid var(--border-strong); border-radius: var(--radius-lg); padding: 34px; box-shadow: 0 28px 80px rgba(0, 0, 0, 0.7), 0 0 60px rgba(71, 0, 204, 0.3); position: relative; }
+    .modal-close { position: absolute; top: 22px; right: 22px; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border-subtle); background: rgba(255, 255, 255, 0.05); color: var(--text-primary); font-size: 18px; cursor: pointer; display: grid; place-items: center; }
+    .modal-close:hover { background: var(--cmyk-primary); }
+    .modal-box h3 { font-size: 24px; margin: 10px 0 12px; }
+    .modal-list { margin: 16px 0; padding-left: 20px; color: var(--text-secondary); }
+    .modal-list li { margin-bottom: 10px; }
+
+    .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--cmyk-primary); color: #fff; padding: 10px 22px; border-radius: 999px; font-size: 13.5px; font-weight: 500; box-shadow: 0 10px 30px var(--cmyk-glow); opacity: 0; pointer-events: none; transition: all 0.25s ease; z-index: 300; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 1040px) {
+      .nav-links { display: none; }
+      .hero { grid-template-columns: 1fr; padding-top: 126px; }
+      .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+      .ventures-grid, .awards-grid, .eco-box { grid-template-columns: 1fr; }
+      .projects-grid { grid-template-columns: repeat(2, 1fr); }
+      .domain-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .projects-grid, .kpi-strip, .domain-grid { grid-template-columns: 1fr; }
+      .container { padding: 0 18px; }
+      .contact-card { padding: 26px; }
+      .nav-cta { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <canvas id="particle-canvas"></canvas>
+
+  <header class="navbar">
+    <a href="#top" class="nav-brand">
+      <div class="brand-mark">M</div>
+      <span id="nav-brand-text">毛学成 · Morris</span>
+    </a>
+    <nav class="nav-links">
+      <a href="#ventures" data-i18n="nav_ventures">科技实体</a>
+      <a href="#projects" data-i18n="nav_projects">核心项目</a>
+      <a href="#credentials" data-i18n="nav_credentials">知产与荣誉</a>
+      <a href="#ecosystem" data-i18n="nav_ecosystem">产学研生态</a>
+    </nav>
+    <div class="nav-right">
+      <div class="lang-switcher" aria-label="Language Switcher">
+        <button class="lang-btn active" data-lang="zh" onclick="setLang('zh')">中文</button>
+        <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" data-lang="id" onclick="setLang('id')">ID</button>
+        <button class="lang-btn" data-lang="ja" onclick="setLang('ja')">日本語</button>
+        <button class="lang-btn" data-lang="ko" onclick="setLang('ko')">한국어</button>
+      </div>
+      <a href="#contact" class="nav-cta" data-i18n="nav_cta">商务对接</a>
+    </div>
+  </header>
+
+  <main class="container" id="top">
+    <section class="hero">
+      <div>
+        <div class="hero-eyebrow">
+          <span class="pulse-dot"></span>
+          <span data-i18n="hero_eyebrow">知行合一 · 行胜于言 · C65 M100 Y0 K20</span>
+        </div>
+        <h1>
+          <span data-i18n="hero_name">毛学成 (Morris)</span><br />
+          <span class="gradient-text" data-i18n="hero_tagline">工业仿真 · 具身智能 · 算力基建</span>
+        </h1>
+        <p class="hero-subtitle" data-i18n="hero_subtitle">
+          计算机科学与技术专业背景，连续创办并主导两家高新技术科技实体，深耕<strong>国产工业数控仿真替代</strong>、<strong>具身智能数据飞轮与垂类大模型</strong>、以及<strong>国家级超算算力与 API 网关基建</strong>，实现从底层算法研发到龙头产线商业化落地的全栈贯通。
+        </p>
+
+        <div class="role-pills">
+          <div class="role-pill"><span class="dot"></span><span data-i18n="role_1">徐州文雀科技有限公司 · 创始人兼 CEO</span></div>
+          <div class="role-pill"><span class="dot"></span><span data-i18n="role_2">济南柏泠科技有限公司 · 技术及落地负责人</span></div>
+          <div class="role-pill"><span class="dot"></span><span data-i18n="role_3">清华大学继续教育学院创业人才研修班结业</span></div>
+        </div>
+
+        <div class="hero-actions">
+          <a href="#projects" class="btn-primary" data-i18n="btn_explore">探索 6 大核心项目矩阵 →</a>
+          <a href="#credentials" class="btn-secondary" data-i18n="btn_credentials">查看专利与竞赛履历</a>
+        </div>
+      </div>
+
+      <aside class="exec-card">
+        <div class="portrait-stage">
+          <div class="cmyk-badge">#4700CC</div>
+          <img
+            src="./证件照.png"
+            alt="Morris (毛学成)"
+            onerror="this.style.display='none'; document.getElementById('avatar-fallback').style.display='grid';"
+          />
+          <div id="avatar-fallback" class="avatar-monogram" style="display:none;margin-bottom:84px;">M</div>
+        </div>
+
+        <div class="exec-card-header">
+          <div>
+            <div style="font-size:20px;font-weight:700;" data-i18n="card_name">毛学成 · Morris</div>
+            <div style="font-size:13px;color:var(--cmyk-light);margin-top:2px;" data-i18n="card_title">技术创始人 / 全栈架构师</div>
+          </div>
+        </div>
+
+        <div class="exec-meta-list">
+          <div class="exec-meta-item">
+            <span class="exec-meta-label" data-i18n="meta_edu_lbl">本科院校</span>
+            <span class="exec-meta-val" data-i18n="meta_edu_val">南京审计大学金审学院 · 计算机科学与技术</span>
+          </div>
+          <div class="exec-meta-item">
+            <span class="exec-meta-label" data-i18n="meta_prev_lbl">前序学历</span>
+            <span class="exec-meta-val" data-i18n="meta_prev_val">江苏安全技术职业学院 · 2026届优秀毕业生（第一）</span>
+          </div>
+          <div class="exec-meta-item">
+            <span class="exec-meta-label" data-i18n="meta_comp_lbl">算力依托</span>
+            <span class="exec-meta-val" data-i18n="meta_comp_val">国家超级计算济南中心合作生态</span>
+          </div>
+          <div class="exec-meta-item">
+            <span class="exec-meta-label" data-i18n="meta_ip_lbl">知识产权</span>
+            <span class="exec-meta-val" data-i18n="meta_ip_val">2发明 + 1实用 + 2软著 + 5顶级域名</span>
+          </div>
+          <div class="exec-meta-item">
+            <span class="exec-meta-label" data-i18n="meta_qual_lbl">综合资质</span>
+            <span class="exec-meta-val" data-i18n="meta_qual_val">日语四级 / 全国数据分析技能 / 志愿1000+h</span>
+          </div>
+        </div>
+
+        <div class="exec-motto" data-i18n="card_motto">
+          “以底层硬核工程能力打破国外工业软件壁垒，以高质量数据与算力底座驱动具身智能走向真实物理世界。”
+        </div>
+      </aside>
+    </section>
+
+    <section class="kpi-strip">
+      <div class="kpi-card">
+        <div class="kpi-num">2<span class="unit" data-i18n="kpi_u1">家</span></div>
+        <div class="kpi-label" data-i18n="kpi_l1">主导创办高新技术实体</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-num">5<span class="unit" data-i18n="kpi_u2">项</span></div>
+        <div class="kpi-label" data-i18n="kpi_l2">核心专利与软著（第一完成人）</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-num">80,000<span class="unit">+h</span></div>
+        <div class="kpi-label" data-i18n="kpi_l3">具身智能多目真机视频资产</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-num">15<span class="unit">%+</span></div>
+        <div class="kpi-label" data-i18n="kpi_l4">数控复杂零件加工效率提升</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-num">99.2<span class="unit">%</span></div>
+        <div class="kpi-label" data-i18n="kpi_l5">布尔平台数据一次验收通过率</div>
+      </div>
+    </section>
+
+    <section class="section" id="ventures">
+      <div class="section-head">
+        <div>
+          <span class="section-kicker">01 / VENTURE ENTITIES</span>
+          <h2 class="section-title" data-i18n="sec1_title">主导创办科技实体</h2>
+        </div>
+        <p class="section-desc" data-i18n="sec1_desc">聚焦国产工业基础软件自主化与人工智能算力及数据底座，形成“工业软件 + AI 算力与数据”双轮驱动。</p>
+      </div>
+
+      <div class="ventures-grid">
+        <article class="venture-card">
+          <div class="venture-top">
+            <div>
+              <h3 data-i18n="v1_name">徐州文雀科技有限公司</h3>
+              <div class="venture-role" data-i18n="v1_role">创始人兼 CEO · 2025年7月成立</div>
+            </div>
+            <span class="venture-badge" data-i18n="v1_badge">徐州市优秀创业企业</span>
+          </div>
+          <p data-i18n="v1_desc">
+            徐州市第98批入驻大学生创业园项目、市大学生优秀创业项目。定位于国产工业基础软件自主攻坚，针对高端数控机床加工仿真长期依赖国外 Vericut 的痛点，自主研发《迎刃而解》工业 NC 程序验证与变速优化仿真系统，已落地服务徐工集团、中国重汽、玫德铸造等制造业龙头。
+          </p>
+          <div class="tag-row">
+            <span class="tag" data-i18n="v1_t1">工业 NC 仿真</span>
+            <span class="tag" data-i18n="v1_t2">防撞干涉检测</span>
+            <span class="tag" data-i18n="v1_t3">自适应变速优化</span>
+            <span class="tag">bool.asia</span>
+          </div>
+        </article>
+
+        <article class="venture-card">
+          <div class="venture-top">
+            <div>
+              <h3 data-i18n="v2_name">济南柏泠科技有限公司</h3>
+              <div class="venture-role" data-i18n="v2_role">技术负责人 / 企业落地负责人</div>
+            </div>
+            <span class="venture-badge" data-i18n="v2_badge">入驻国家超算济南中心</span>
+          </div>
+          <p data-i18n="v2_desc">
+            深度依托国家超级计算济南中心异构算力集群底座，重点布局高精度世界模型构建、具身智能算法演进、算力资源调度与面向垂直场景的 AI 自动化开发套件，并构建工业级多源异构数据清洗、时序对齐与专家标注闭环工程体系。
+          </p>
+          <div class="tag-row">
+            <span class="tag" data-i18n="v2_t1">国家超算济南中心</span>
+            <span class="tag">HGX-B300</span>
+            <span class="tag" data-i18n="v2_t3">流体索引 API 网关</span>
+            <span class="tag" data-i18n="v2_t4">工业级数据工程</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="projects">
+      <div class="section-head">
+        <div>
+          <span class="section-kicker">02 / PROJECT PORTFOLIO</span>
+          <h2 class="section-title" data-i18n="sec2_title">核心项目全景矩阵</h2>
+        </div>
+        <div class="filter-bar" id="project-filters">
+          <button class="filter-btn active" data-filter="all" data-i18n="flt_all">全部项目 (6)</button>
+          <button class="filter-btn" data-filter="industrial" data-i18n="flt_ind">工业软件</button>
+          <button class="filter-btn" data-filter="embodied" data-i18n="flt_emb">具身智能与数据</button>
+          <button class="filter-btn" data-filter="infra" data-i18n="flt_inf">算力与 AI 基建</button>
+          <button class="filter-btn" data-filter="saas" data-i18n="flt_saas">开源与出海 SaaS</button>
+        </div>
+      </div>
+
+      <div class="projects-grid">
+        <article class="project-card" data-category="industrial" onclick="openModal('yingren')">
+          <div>
+            <div class="proj-cat"><span>INDUSTRIAL SAAS</span><span>01</span></div>
+            <h3 class="proj-title" data-i18n="p1_title">《迎刃而解》工业数控仿真与自适应优化系统</h3>
+            <p class="proj-summary" data-i18n="p1_sum">
+              面向高端数控加工的 NC 程序验证与进给率优化 SaaS，攻克空间干涉碰撞检测、插补路径重构与动态切削负荷分析，实现国产化替代。
+            </p>
+          </div>
+          <div>
+            <div class="proj-metrics">
+              <div class="pm-item"><strong>+15%</strong><span data-i18n="p1_m1">复杂零件加工效率</span></div>
+              <div class="pm-item"><strong data-i18n="p1_m2v">2 发明 + 2 软著</strong><span data-i18n="p1_m2">自主核心知识产权</span></div>
+            </div>
+            <div class="proj-footer">
+              <span data-i18n="p1_ft">徐工 / 重汽 / 玫德铸造落地</span>
+              <span data-i18n="view_detail">查看详情 →</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project-card" data-category="embodied" onclick="openModal('embodied')">
+          <div>
+            <div class="proj-cat"><span>EMBODIED AI</span><span>02</span></div>
+            <h3 class="proj-title" data-i18n="p2_title">具身智能垂类大模型 & 环卫/酒店机器人</h3>
+            <p class="proj-summary" data-i18n="p2_sum">
+              采用“L1 云端认知大脑（VLM/VLA + FoundationPose）+ L2 机载高频小脑（DP3 + 六维力控）+ L3 ROS 2 硬实时运控”三层架构，落地推桶与洗护非结构化场景。
+            </p>
+          </div>
+          <div>
+            <div class="proj-metrics">
+              <div class="pm-item"><strong>IP66 / 3-Arm</strong><span data-i18n="p2_m1">整机重载防溜坡架构</span></div>
+              <div class="pm-item"><strong>≥96%</strong><span data-i18n="p2_m2">示范运行目标成功率</span></div>
+            </div>
+            <div class="proj-footer">
+              <span data-i18n="p2_ft">余杭申报 / 9个月加速方案</span>
+              <span data-i18n="view_detail">查看详情 →</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project-card" data-category="embodied" onclick="openModal('boolasia')">
+          <div>
+            <div class="proj-cat"><span>DATA FLYWHEEL</span><span>03</span></div>
+            <h3 class="proj-title" data-i18n="p3_title">中飞布尔具身数据生态平台（bool.asia）</h3>
+            <p class="proj-summary" data-i18n="p3_sum">
+              独立完成全栈架构与端到端开发，通过平台派单撮合 + 三级质检闭环，一面实现现金流造血，一面为垂类大模型排他性沉淀多模态真机数据资产。
+            </p>
+          </div>
+          <div>
+            <div class="proj-metrics">
+              <div class="pm-item"><strong>760M+</strong><span data-i18n="p3_m1">真机多模态帧资产</span></div>
+              <div class="pm-item"><strong>3.4 Days</strong><span data-i18n="p3_m2">平均交付周期</span></div>
+            </div>
+            <div class="proj-footer">
+              <span data-i18n="p3_ft">320+ 协同团队 / 12+ 标注模态</span>
+              <span data-i18n="view_detail">查看详情 →</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project-card" data-category="infra" onclick="openModal('fluidindex')">
+          <div>
+            <div class="proj-cat"><span>COMPUTE & GATEWAY</span><span>04</span></div>
+            <h3 class="proj-title" data-i18n="p4_title">流体索引 API 中转站与 B300 超算算力供给</h3>
+            <p class="proj-summary" data-i18n="p4_sum">
+              基于 NestJS + PostgreSQL 行级锁 + Redis 跨实例限流构建 OpenAI 兼容高并发网关与预占结算账本；联动国家超算济南中心与海外通道提供 HGX-B300 及主流大模型渠道聚合。
+            </p>
+          </div>
+          <div>
+            <div class="proj-metrics">
+              <div class="pm-item"><strong>HGX-B300</strong><span data-i18n="p4_m1">超算直供与半期货通道</span></div>
+              <div class="pm-item"><strong>OpenAI API</strong><span data-i18n="p4_m2">DeepSeek / Kimi / GLM</span></div>
+            </div>
+            <div class="proj-footer">
+              <span data-i18n="p4_ft">FluidIndex 企业级网关</span>
+              <span data-i18n="view_detail">查看详情 →</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project-card" data-category="saas" onclick="openModal('moonframing')">
+          <div>
+            <div class="proj-cat"><span>OPEN SOURCE / HACKATHON</span><span>05</span></div>
+            <h3 class="proj-title" data-i18n="p5_title">MoonFraming 纯 MoonBit 字节流分帧库</h3>
+            <p class="proj-summary" data-i18n="p5_sum">
+              黑客松新生态基础设施项目。零运行时绑定的纯 MoonBit 字节流分帧库，精准解决 TCP / WebSocket / 文件流粘包与半包问题，支持 Wasm / Wasm-GC / JS 后端。
+            </p>
+          </div>
+          <div>
+            <div class="proj-metrics">
+              <div class="pm-item"><strong>uLEB128</strong><span data-i18n="p5_m1">增量与批量双解码</span></div>
+              <div class="pm-item"><strong>CRC-32</strong><span data-i18n="p5_m2">流式校验与双重预算</span></div>
+            </div>
+            <div class="proj-footer">
+              <span>GitHub: Morris-C17/moonframing</span>
+              <span data-i18n="view_detail">查看详情 →</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project-card" data-category="saas" onclick="openModal('browserpilot')">
+          <div>
+            <div class="proj-cat"><span>AI AGENT SAAS</span><span>06</span></div>
+            <h3 class="proj-title" data-i18n="p6_title">BrowserPilot 浏览器自动化 Agent 与海外专项</h3>
+            <p class="proj-summary" data-i18n="p6_sum">
+              面向出海场景的全栈 AI 浏览器自动化 SaaS（Next.js 16 + FastAPI + Playwright + Multi-LLM ReAct Loop + LemonSqueezy），同期交付印尼 ASR 语音纠错与 Trace 专家任务。
+            </p>
+          </div>
+          <div>
+            <div class="proj-metrics">
+              <div class="pm-item"><strong>ReAct Loop</strong><span data-i18n="p6_m1">多模型自主决策执行</span></div>
+              <div class="pm-item"><strong>Global SaaS</strong><span data-i18n="p6_m2">全球计费商业闭环</span></div>
+            </div>
+            <div class="proj-footer">
+              <span data-i18n="p6_ft">跨境技术研发与专项交付</span>
+              <span data-i18n="view_detail">查看详情 →</span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="credentials">
+      <div class="section-head">
+        <div>
+          <span class="section-kicker">03 / IP & HONORS</span>
+          <h2 class="section-title" data-i18n="sec3_title">知识产权、竞赛荣誉与资质</h2>
+        </div>
+        <p class="section-desc" data-i18n="sec3_desc">所有专利、软著、域名及竞赛奖项均源于真实科研攻关与企业商业化实战沉淀。</p>
+      </div>
+
+      <div class="tabs-nav">
+        <button class="tab-btn active" onclick="switchTab('tab-ip', this)" data-i18n="tab_ip">知识产权与域名资产</button>
+        <button class="tab-btn" onclick="switchTab('tab-awards', this)" data-i18n="tab_awards">竞赛荣誉与奖学金</button>
+        <button class="tab-btn" onclick="switchTab('tab-edu', this)" data-i18n="tab_edu">求学履历与综合资质</button>
+      </div>
+
+      <div class="tab-panel active" id="tab-ip">
+        <div class="ip-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th data-i18n="th_type">成果类型</th>
+                <th data-i18n="th_name">成果名称 / 登记内容</th>
+                <th data-i18n="th_owner">权利人 / 位次</th>
+                <th data-i18n="th_status">登记号 / 状态</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong data-i18n="ip_t1">发明专利</strong></td>
+                <td data-i18n="ip_n1">一种基于 NC 代码的自适应变速加工优化技术</td>
+                <td data-i18n="ip_o1">第一发明人（徐州文雀科技）</td>
+                <td><span class="status-pill status-review" data-i18n="ip_s1">审查阶段 · 202610760680X</span></td>
+              </tr>
+              <tr>
+                <td><strong data-i18n="ip_t2">发明专利</strong></td>
+                <td data-i18n="ip_n2">一种基于高精度代码仿真的数控加工防撞技术</td>
+                <td data-i18n="ip_o2">第一发明人（徐州文雀科技）</td>
+                <td><span class="status-pill status-review" data-i18n="ip_s2">审查阶段 · 2026107607817</span></td>
+              </tr>
+              <tr>
+                <td><strong data-i18n="ip_t3">实用新型专利</strong></td>
+                <td data-i18n="ip_n3">一种带可视化操作界面的数控加工设备</td>
+                <td data-i18n="ip_o3">第一发明人（徐州文雀科技）</td>
+                <td><span class="status-pill status-granted" data-i18n="ip_s3">已授权 · 2026210892643</span></td>
+              </tr>
+              <tr>
+                <td><strong data-i18n="ip_t4">软件著作权</strong></td>
+                <td data-i18n="ip_n4">NC 程序验证仿真系统 V1.0</td>
+                <td data-i18n="ip_o4">第一完成人</td>
+                <td><span class="status-pill status-granted">2026SR0748905</span></td>
+              </tr>
+              <tr>
+                <td><strong data-i18n="ip_t5">软件著作权</strong></td>
+                <td data-i18n="ip_n5">NC 程序变速优化系统 V1.0</td>
+                <td data-i18n="ip_o5">第一完成人</td>
+                <td><span class="status-pill status-granted">2026SR0406702</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="domain-grid">
+          <div class="domain-chip">bool.asia</div>
+          <div class="domain-chip">wenque.tech</div>
+          <div class="domain-chip">wenque.cloud</div>
+          <div class="domain-chip">dyhk.cloud</div>
+          <div class="domain-chip">rbti.uno</div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-awards">
+        <div class="awards-grid">
+          <div class="award-item">
+            <span class="award-year">2026</span>
+            <div>
+              <h4 data-i18n="aw1_t">中国国际大学生创新大赛 · 校赛决赛一等奖（全校第一名）</h4>
+              <p data-i18n="aw1_d">核心创业项目以全校第一成绩晋级并斩获一等奖</p>
+            </div>
+          </div>
+          <div class="award-item">
+            <span class="award-year">2026</span>
+            <div>
+              <h4 data-i18n="aw2_t">第十五届中国创新创业大赛 AI+工程机械专业赛 · 优秀奖</h4>
+              <p data-i18n="aw2_d">工信部火炬中心、江苏省工信厅、徐州市人民政府联合主办</p>
+            </div>
+          </div>
+          <div class="award-item">
+            <span class="award-year">2025</span>
+            <div>
+              <h4 data-i18n="aw3_t">全国大学生数据分析竞赛 · 一等奖</h4>
+              <p data-i18n="aw3_d">展现出扎实的工业数据处理、建模与算法分析能力</p>
+            </div>
+          </div>
+          <div class="award-item">
+            <span class="award-year">2025</span>
+            <div>
+              <h4 data-i18n="aw4_t">第十九届“挑战杯”大学生课外学术科技作品竞赛 · 江苏省赛三等奖</h4>
+              <p data-i18n="aw4_d">聚焦工业基础软件与人工智能交叉领域学术科技作品</p>
+            </div>
+          </div>
+          <div class="award-item">
+            <span class="award-year">2024</span>
+            <div>
+              <h4 data-i18n="aw5_t">中国银行杯创新创业大赛 · 省赛三等奖</h4>
+              <p data-i18n="aw5_d">早期创业项目商业化与技术可行性获得省级赛事认可</p>
+            </div>
+          </div>
+          <div class="award-item">
+            <span class="award-year">2024–26</span>
+            <div>
+              <h4 data-i18n="aw6_t">国家二等奖学金 / 江苏省优秀学生干部 / 徐州市优秀创业企业负责人</h4>
+              <p data-i18n="aw6_d">兼顾学业第一与公益实践，累计志愿服务时长超 1,000 小时</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-edu">
+        <div class="awards-grid">
+          <div class="award-item">
+            <span class="award-year" data-i18n="ed1_y">本科</span>
+            <div>
+              <h4 data-i18n="ed1_t">南京审计大学金审学院 · 计算机科学与技术</h4>
+              <p data-i18n="ed1_d">深耕编译技术、数据结构与算法、计算机体系结构，获学校“校长面对面”高度支持与产学研协同反哺。</p>
+            </div>
+          </div>
+          <div class="award-item">
+            <span class="award-year" data-i18n="ed2_y">研修</span>
+            <div>
+              <h4 data-i18n="ed2_t">清华大学继续教育学院 · 创业人才研修班结业</h4>
+              <p data-i18n="ed2_d">系统完成战略定位、现代企业治理、科技成果转化与资本对接全维度研习。</p>
+            </div>
+          </div>
+          <div class="award-item">
+            <span class="award-year" data-i18n="ed3_y">专科</span>
+            <div>
+              <h4 data-i18n="ed3_t">江苏安全技术职业学院 · 2026届优秀毕业生</h4>
+              <p data-i18n="ed3_d">数字媒体技术专业班级综合排名第一，获国家二等奖学金、大学生寒假社会实践“优秀个人”。</p>
+            </div>
+          </div>
+          <div class="award-item">
+            <span class="award-year" data-i18n="ed4_y">技能</span>
+            <div>
+              <h4 data-i18n="ed4_t">复合型能力矩阵与行业认证</h4>
+              <p data-i18n="ed4_d">全国数据分析专业技能证书、日语四级、全国计算机一级、普通话二级甲等、全栈开发与 AI 获客系统实战。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="ecosystem">
+      <div class="eco-box">
+        <div>
+          <span class="section-kicker">04 / ECOSYSTEM & CLIENTS</span>
+          <h2 class="section-title" style="margin-bottom:14px;" data-i18n="sec4_title">标杆客户与学术背书</h2>
+          <p style="color:var(--text-secondary);font-size:14.5px;margin-bottom:16px;" data-i18n="sec4_desc">
+            技术与数据服务能力已通过互联网巨头、智能驾驶主机厂、重工制造龙头及国家级算力中心的多重实战验证，并与南开大学等顶尖学术团队建立深度产学研协同。
+          </p>
+          <div style="font-size:13px;color:var(--cmyk-soft);" data-i18n="sec4_bullets">
+            • 依托国家超级计算济南中心算力节点<br />
+            • 对接南开大学国家级领军人才与百人级科研梯队支持
+          </div>
+        </div>
+        <div class="partner-cloud">
+          <span class="partner-pill">XCMG 徐工集团</span>
+          <span class="partner-pill">SINOTRUK 中国重汽</span>
+          <span class="partner-pill">MEIDE 玫德铸造</span>
+          <span class="partner-pill">NSCC-JN 国家超算济南中心</span>
+          <span class="partner-pill">Baidu 百度</span>
+          <span class="partner-pill">DAMO 阿里达摩院</span>
+          <span class="partner-pill">JD Logistics 京东物流</span>
+          <span class="partner-pill">BYD 比亚迪</span>
+          <span class="partner-pill">Chery 奇瑞</span>
+          <span class="partner-pill">Leapmotor 零跑</span>
+          <span class="partner-pill">Meituan 美团</span>
+          <span class="partner-pill">Kuaishou 快手</span>
+        </div>
+      </div>
+    </section>
+
+    <footer class="contact-footer" id="contact">
+      <div class="contact-card">
+        <div>
+          <span class="section-kicker" style="margin-bottom:6px;">05 / CONNECT</span>
+          <h2 style="font-size:26px;font-weight:700;margin-bottom:8px;" data-i18n="sec5_title">期待与您探讨技术合作与产业落地</h2>
+          <p style="color:var(--text-secondary);font-size:14px;" data-i18n="sec5_desc">
+            开放工业软件联调、具身智能数据采集标注、超算算力/API 对接及高水平双创合作。
+          </p>
+        </div>
+        <div class="contact-info-row">
+          <button class="copy-pill" onclick="copyText('19549129461', 'phone')">
+            <span>📞</span> 195-4912-9461
+          </button>
+          <button class="copy-pill" onclick="copyText('18405314912@163.com', 'email')">
+            <span>✉️</span> 18405314912@163.com
+          </button>
+        </div>
+      </div>
+      <div class="copyright">
+        <span data-i18n="copyright">© 2026 毛学成 (Morris) · 徐州文雀科技有限公司 / 济南柏泠科技有限公司</span>
+        <span>Theme Spec: CMYK (65, 100, 0, 20) · HEX #4700CC</span>
+      </div>
+    </footer>
+  </main>
+
+  <div class="modal-backdrop" id="project-modal" onclick="closeModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <span class="section-kicker" id="m-kicker">PROJECT DETAIL</span>
+      <h3 id="m-title">Project Title</h3>
+      <p id="m-desc" style="color:var(--text-secondary);font-size:14.5px;"></p>
+      <ul class="modal-list" id="m-bullets"></ul>
+      <div class="tag-row" id="m-tags"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Copied</div>
+
+  <script>
+    let currentLang = localStorage.getItem('morris_profile_lang') || 'zh';
+
+    const i18n = {
+      zh: {
+        htmlLang: 'zh-CN',
+        pageTitle: '毛学成 Morris | 工业软件 · 具身智能 · 算力基建',
+        brand: '毛学成 · Morris',
+        nav_ventures: '科技实体', nav_projects: '核心项目', nav_credentials: '知产与荣誉', nav_ecosystem: '产学研生态', nav_cta: '商务对接',
+        hero_eyebrow: '知行合一 · 行胜于言 · C65 M100 Y0 K20',
+        hero_name: '毛学成 (Morris)',
+        hero_tagline: '工业仿真 · 具身智能 · 算力基建',
+        hero_subtitle: '计算机科学与技术专业背景，连续创办并主导两家高新技术科技实体，深耕<strong>国产工业数控仿真替代</strong>、<strong>具身智能数据飞轮与垂类大模型</strong>、以及<strong>国家级超算算力与 API 网关基建</strong>，实现从底层算法研发到龙头产线商业化落地的全栈贯通。',
+        role_1: '徐州文雀科技有限公司 · 创始人兼 CEO',
+        role_2: '济南柏泠科技有限公司 · 技术及落地负责人',
+        role_3: '清华大学继续教育学院创业人才研修班结业',
+        btn_explore: '探索 6 大核心项目矩阵 →',
+        btn_credentials: '查看专利与竞赛履历',
+        card_name: '毛学成 · Morris',
+        card_title: '技术创始人 / 全栈架构师',
+        meta_edu_lbl: '本科院校', meta_edu_val: '南京审计大学金审学院 · 计算机科学与技术',
+        meta_prev_lbl: '前序学历', meta_prev_val: '江苏安全技术职业学院 · 2026届优秀毕业生（第一）',
+        meta_comp_lbl: '算力依托', meta_comp_val: '国家超级计算济南中心合作生态',
+        meta_ip_lbl: '知识产权', meta_ip_val: '2发明 + 1实用 + 2软著 + 5顶级域名',
+        meta_qual_lbl: '综合资质', meta_qual_val: '日语四级 / 全国数据分析技能 / 志愿1000+h',
+        card_motto: '“以底层硬核工程能力打破国外工业软件壁垒，以高质量数据与算力底座驱动具身智能走向真实物理世界。”',
+        kpi_u1: '家', kpi_l1: '主导创办高新技术实体',
+        kpi_u2: '项', kpi_l2: '核心专利与软著（第一完成人）',
+        kpi_l3: '具身智能多目真机视频资产',
+        kpi_l4: '数控复杂零件加工效率提升',
+        kpi_l5: '布尔平台数据一次验收通过率',
+        sec1_title: '主导创办科技实体',
+        sec1_desc: '聚焦国产工业基础软件自主化与人工智能算力及数据底座，形成“工业软件 + AI 算力与数据”双轮驱动。',
+        v1_name: '徐州文雀科技有限公司', v1_role: '创始人兼 CEO · 2025年7月成立', v1_badge: '徐州市优秀创业企业',
+        v1_desc: '徐州市第98批入驻大学生创业园项目、市大学生优秀创业项目。定位于国产工业基础软件自主攻坚，针对高端数控机床加工仿真长期依赖国外 Vericut 的痛点，自主研发《迎刃而解》工业 NC 程序验证与变速优化仿真系统，已落地服务徐工集团、中国重汽、玫德铸造等制造业龙头。',
+        v1_t1: '工业 NC 仿真', v1_t2: '防撞干涉检测', v1_t3: '自适应变速优化',
+        v2_name: '济南柏泠科技有限公司', v2_role: '技术负责人 / 企业落地负责人', v2_badge: '入驻国家超算济南中心',
+        v2_desc: '深度依托国家超级计算济南中心异构算力集群底座，重点布局高精度世界模型构建、具身智能算法演进、算力资源调度与面向垂直场景的 AI 自动化开发套件，并构建工业级多源异构数据清洗、时序对齐与专家标注闭环工程体系。',
+        v2_t1: '国家超算济南中心', v2_t3: '流体索引 API 网关', v2_t4: '工业级数据工程',
+        sec2_title: '核心项目全景矩阵',
+        flt_all: '全部项目 (6)', flt_ind: '工业软件', flt_emb: '具身智能与数据', flt_inf: '算力与 AI 基建', flt_saas: '开源与出海 SaaS',
+        view_detail: '查看详情 →',
+        p1_title: '《迎刃而解》工业数控仿真与自适应优化系统', p1_sum: '面向高端数控加工的 NC 程序验证与进给率优化 SaaS，攻克空间干涉碰撞检测、插补路径重构与动态切削负荷分析，实现国产化替代。', p1_m1: '复杂零件加工效率', p1_m2v: '2 发明 + 2 软著', p1_m2: '自主核心知识产权', p1_ft: '徐工 / 重汽 / 玫德铸造落地',
+        p2_title: '具身智能垂类大模型 & 环卫/酒店机器人', p2_sum: '采用“L1 云端认知大脑（VLM/VLA + FoundationPose）+ L2 机载高频小脑（DP3 + 六维力控）+ L3 ROS 2 硬实时运控”三层架构，落地推桶与洗护非结构化场景。', p2_m1: '整机重载防溜坡架构', p2_m2: '示范运行目标成功率', p2_ft: '余杭申报 / 9个月加速方案',
+        p3_title: '中飞布尔具身数据生态平台（bool.asia）', p3_sum: '独立完成全栈架构与端到端开发，通过平台派单撮合 + 三级质检闭环，一面实现现金流造血，一面为垂类大模型排他性沉淀多模态真机数据资产。', p3_m1: '真机多模态帧资产', p3_m2: '平均交付周期', p3_ft: '320+ 协同团队 / 12+ 标注模态',
+        p4_title: '流体索引 API 中转站与 B300 超算算力供给', p4_sum: '基于 NestJS + PostgreSQL 行级锁 + Redis 跨实例限流构建 OpenAI 兼容高并发网关与预占结算账本；联动国家超算济南中心与海外通道提供 HGX-B300 及主流大模型渠道聚合。', p4_m1: '超算直供与半期货通道', p4_m2: 'DeepSeek / Kimi / GLM', p4_ft: 'FluidIndex 企业级网关',
+        p5_title: 'MoonFraming 纯 MoonBit 字节流分帧库', p5_sum: '黑客松新生态基础设施项目。零运行时绑定的纯 MoonBit 字节流分帧库，精准解决 TCP / WebSocket / 文件流粘包与半包问题，支持 Wasm / Wasm-GC / JS 后端。', p5_m1: '增量与批量双解码', p5_m2: '流式校验与双重预算',
+        p6_title: 'BrowserPilot 浏览器自动化 Agent 与海外专项', p6_sum: '面向出海场景的全栈 AI 浏览器自动化 SaaS（Next.js 16 + FastAPI + Playwright + Multi-LLM ReAct Loop + LemonSqueezy），同期交付印尼 ASR 语音纠错与 Trace 专家任务。', p6_m1: '多模型自主决策执行', p6_m2: '全球计费商业闭环', p6_ft: '跨境技术研发与专项交付',
+        sec3_title: '知识产权、竞赛荣誉与资质', sec3_desc: '所有专利、软著、域名及竞赛奖项均源于真实科研攻关与企业商业化实战沉淀。',
+        tab_ip: '知识产权与域名资产', tab_awards: '竞赛荣誉与奖学金', tab_edu: '求学履历与综合资质',
+        th_type: '成果类型', th_name: '成果名称 / 登记内容', th_owner: '权利人 / 位次', th_status: '登记号 / 状态',
+        ip_t1: '发明专利', ip_n1: '一种基于 NC 代码的自适应变速加工优化技术', ip_o1: '第一发明人（徐州文雀科技）', ip_s1: '审查阶段 · 202610760680X',
+        ip_t2: '发明专利', ip_n2: '一种基于高精度代码仿真的数控加工防撞技术', ip_o2: '第一发明人（徐州文雀科技）', ip_s2: '审查阶段 · 2026107607817',
+        ip_t3: '实用新型专利', ip_n3: '一种带可视化操作界面的数控加工设备', ip_o3: '第一发明人（徐州文雀科技）', ip_s3: '已授权 · 2026210892643',
+        ip_t4: '软件著作权', ip_n4: 'NC 程序验证仿真系统 V1.0', ip_o4: '第一完成人',
+        ip_t5: '软件著作权', ip_n5: 'NC 程序变速优化系统 V1.0', ip_o5: '第一完成人',
+        aw1_t: '中国国际大学生创新大赛 · 校赛决赛一等奖（全校第一名）', aw1_d: '核心创业项目以全校第一成绩晋级并斩获一等奖',
+        aw2_t: '第十五届中国创新创业大赛 AI+工程机械专业赛 · 优秀奖', aw2_d: '工信部火炬中心、江苏省工信厅、徐州市人民政府联合主办',
+        aw3_t: '全国大学生数据分析竞赛 · 一等奖', aw3_d: '展现出扎实的工业数据处理、建模与算法分析能力',
+        aw4_t: '第十九届“挑战杯”大学生课外学术科技作品竞赛 · 江苏省赛三等奖', aw4_d: '聚焦工业基础软件与人工智能交叉领域学术科技作品',
+        aw5_t: '中国银行杯创新创业大赛 · 省赛三等奖', aw5_d: '早期创业项目商业化与技术可行性获得省级赛事认可',
+        aw6_t: '国家二等奖学金 / 江苏省优秀学生干部 / 徐州市优秀创业企业负责人', aw6_d: '兼顾学业第一与公益实践，累计志愿服务时长超 1,000 小时',
+        ed1_y: '本科', ed1_t: '南京审计大学金审学院 · 计算机科学与技术', ed1_d: '深耕编译技术、数据结构与算法、计算机体系结构，获学校“校长面对面”高度支持与产学研协同反哺。',
+        ed2_y: '研修', ed2_t: '清华大学继续教育学院 · 创业人才研修班结业', ed2_d: '系统完成战略定位、现代企业治理、科技成果转化与资本对接全维度研习。',
+        ed3_y: '专科', ed3_t: '江苏安全技术职业学院 · 2026届优秀毕业生', ed3_d: '数字媒体技术专业班级综合排名第一，获国家二等奖学金、大学生寒假社会实践“优秀个人”。',
+        ed4_y: '技能', ed4_t: '复合型能力矩阵与行业认证', ed4_d: '全国数据分析专业技能证书、日语四级、全国计算机一级、普通话二级甲等、全栈开发与 AI 获客系统实战。',
+        sec4_title: '标杆客户与学术背书', sec4_desc: '技术与数据服务能力已通过互联网巨头、智能驾驶主机厂、重工制造龙头及国家级算力中心的多重实战验证，并与南开大学等顶尖学术团队建立深度产学研协同。',
+        sec4_bullets: '• 依托国家超级计算济南中心算力节点<br />• 对接南开大学国家级领军人才与百人级科研梯队支持',
+        sec5_title: '期待与您探讨技术合作与产业落地', sec5_desc: '开放工业软件联调、具身智能数据采集标注、超算算力/API 对接及高水平双创合作。',
+        copyright: '© 2026 毛学成 (Morris) · 徐州文雀科技有限公司 / 济南柏泠科技有限公司',
+        copy_phone: '已复制联系电话', copy_email: '已复制联系邮箱'
+      },
+      en: {
+        htmlLang: 'en',
+        pageTitle: 'Morris (Mao Xuecheng) | Industrial Software · Embodied AI · Compute Infra',
+        brand: 'Morris · Executive Profile',
+        nav_ventures: 'Ventures', nav_projects: 'Projects', nav_credentials: 'IP & Honors', nav_ecosystem: 'Ecosystem', nav_cta: 'Contact',
+        hero_eyebrow: 'ACTION OVER WORDS · C65 M100 Y0 K20',
+        hero_name: 'Morris (Mao Xuecheng)',
+        hero_tagline: 'Industrial Simulation · Embodied AI · Compute Infra',
+        hero_subtitle: 'Computer Science founder leading two high-tech ventures. Focused on <strong>domestic industrial NC simulation</strong>, <strong>Embodied AI data flywheels & vertical models</strong>, and <strong>national supercomputing & API gateway infrastructure</strong>—bridging core algorithms to enterprise production lines.',
+        role_1: 'Xuzhou Wenque Tech · Founder & CEO',
+        role_2: 'Jinan Bailing Tech · Tech & Deployment Lead',
+        role_3: 'Tsinghua University SCE · Entrepreneurship Program Alumnus',
+        btn_explore: 'Explore 6 Core Projects →',
+        btn_credentials: 'View Patents & Awards',
+        card_name: 'Morris (Mao Xuecheng)',
+        card_title: 'Tech Founder / Full-Stack Architect',
+        meta_edu_lbl: 'University', meta_edu_val: 'Nanjing Audit Univ. Jinshen College · CS & Tech',
+        meta_prev_lbl: 'Prior Degree', meta_prev_val: 'Jiangsu Safety Tech College · Top 1 Outstanding Graduate',
+        meta_comp_lbl: 'Compute Base', meta_comp_val: 'National Supercomputing Center in Jinan Ecosystem',
+        meta_ip_lbl: 'IP Portfolio', meta_ip_val: '2 Invention + 1 Utility Patents + 2 Copyrights + 5 Domains',
+        meta_qual_lbl: 'Credentials', meta_qual_val: 'JLPT N4 / Data Analytics Cert / 1,000+h Volunteering',
+        card_motto: '"Breaking foreign industrial software monopolies with hardcore engineering, and driving Embodied AI into the physical world through high-quality data and compute."',
+        kpi_u1: '', kpi_l1: 'High-Tech Ventures Founded',
+        kpi_u2: '', kpi_l2: 'Core Patents & Software Copyrights',
+        kpi_l3: 'Multi-View Real-Robot Video Assets',
+        kpi_l4: 'Complex CNC Machining Efficiency Gain',
+        kpi_l5: 'First-Pass Data Acceptance Rate (bool.asia)',
+        sec1_title: 'Founded Technology Ventures',
+        sec1_desc: 'Dual-engine strategy uniting autonomous industrial base software with AI compute and multimodal data infrastructure.',
+        v1_name: 'Xuzhou Wenque Technology Co., Ltd.', v1_role: 'Founder & CEO · Est. July 2025', v1_badge: 'Xuzhou Outstanding Startup',
+        v1_desc: 'Selected into Xuzhou University Science Park (Batch 98). Tackling foreign monopolies like Vericut in high-end CNC machining, we built the "Yingren" NC verification & adaptive feedrate optimization system—deployed at XCMG, SINOTRUK, and Meide Casting.',
+        v1_t1: 'CNC Simulation', v1_t2: 'Collision Detection', v1_t3: 'Adaptive Feedrate',
+        v2_name: 'Jinan Bailing Technology Co., Ltd.', v2_role: 'Tech Lead / Deployment Head', v2_badge: 'NSCC Jinan Resident',
+        v2_desc: 'Anchored at the National Supercomputing Center in Jinan, building high-precision world models, Embodied AI algorithms, GPU compute scheduling, and closed-loop industrial data cleaning, alignment, and annotation pipelines.',
+        v2_t1: 'NSCC Jinan', v2_t3: 'FluidIndex Gateway', v2_t4: 'Industrial Data Eng',
+        sec2_title: 'Core Project Matrix',
+        flt_all: 'All Projects (6)', flt_ind: 'Industrial Software', flt_emb: 'Embodied AI & Data', flt_inf: 'Compute & Gateway', flt_saas: 'Open Source & SaaS',
+        view_detail: 'Details →',
+        p1_title: 'Yingren: Industrial CNC Simulation & Optimization SaaS', p1_sum: 'NC code verification and adaptive feedrate optimization SaaS featuring spatial collision detection, path reconstruction, and cutting load analysis.', p1_m1: 'Machining Efficiency', p1_m2v: '2 Patents + 2 CR', p1_m2: 'First-Inventor IP', p1_ft: 'Deployed at XCMG / SINOTRUK',
+        p2_title: 'Embodied AI Vertical Models & Sanitation/Hotel Robots', p2_sum: '3-tier architecture: L1 Cloud Brain (VLM/VLA + FoundationPose), L2 Onboard Cerebellum (DP3 + 6-axis force control), and L3 ROS 2 Humble hard real-time safety.', p2_m1: 'Heavy-Duty 3-Arm Chassis', p2_m2: 'Target Demo Success Rate', p2_ft: 'Yuhang Grant / 9-Mo Roadmap',
+        p3_title: 'Bool.asia Embodied Data Ecosystem Platform', p3_sum: 'Full-stack crowdsourced & dedicated data flywheel platform generating positive cash flow while feeding exclusive multimodal real-robot trajectories to vertical models.', p3_m1: 'Real-Robot Multimodal Frames', p3_m2: 'Avg. Delivery Cycle', p3_ft: '320+ Teams / 12+ Modalities',
+        p4_title: 'FluidIndex API Gateway & HGX-B300 Compute Supply', p4_sum: 'High-concurrency OpenAI-compatible gateway (NestJS + PostgreSQL row locks + Redis rate-limiting) paired with NSCC Jinan B300 supply and LLM API aggregation.', p4_m1: 'Supercomputer & Semi-Futures', p4_m2: 'DeepSeek / Kimi / GLM', p4_ft: 'Enterprise API Infrastructure',
+        p5_title: 'MoonFraming: Pure MoonBit Byte-Stream Framing', p5_sum: 'Hackathon infrastructure library in pure MoonBit with zero runtime lock-in, solving TCP/WebSocket framing with uLEB128, fixed-width headers, and IEEE CRC-32.', p5_m1: 'Incremental & Batch Decode', p5_m2: 'Stream Checksum & Budgets',
+        p6_title: 'BrowserPilot AI Agent SaaS & Global Projects', p6_sum: 'Full-stack AI browser automation SaaS (Next.js 16 + FastAPI + Playwright + Multi-LLM ReAct Loop + LemonSqueezy), plus Indonesia ASR correction and Trace tasks.', p6_m1: 'Autonomous Multi-LLM Loop', p6_m2: 'Global SaaS Billing', p6_ft: 'Cross-Border R&D Delivery',
+        sec3_title: 'Intellectual Property, Honors & Credentials', sec3_desc: 'Verified patents, copyrights, domain assets, and national/provincial awards from real-world R&D.',
+        tab_ip: 'IP & Domain Assets', tab_awards: 'Competitions & Awards', tab_edu: 'Education & Skills',
+        th_type: 'Type', th_name: 'Title / Registration', th_owner: 'Owner / Role', th_status: 'Reg. No. / Status',
+        ip_t1: 'Invention Patent', ip_n1: 'Adaptive Variable-Speed Machining Optimization via NC Code', ip_o1: 'First Inventor (Wenque Tech)', ip_s1: 'Under Review · 202610760680X',
+        ip_t2: 'Invention Patent', ip_n2: 'High-Precision Code Simulation CNC Anti-Collision Tech', ip_o2: 'First Inventor (Wenque Tech)', ip_s2: 'Under Review · 2026107607817',
+        ip_t3: 'Utility Patent', ip_n3: 'CNC Machining Equipment with Visual Operation Interface', ip_o3: 'First Inventor (Wenque Tech)', ip_s3: 'Granted · 2026210892643',
+        ip_t4: 'Software Copyright', ip_n4: 'NC Program Verification Simulation System V1.0', ip_o4: 'First Author',
+        ip_t5: 'Software Copyright', ip_n5: 'NC Program Speed Optimization System V1.0', ip_o5: 'First Author',
+        aw1_t: 'China Int’l College Students’ Innovation Competition · 1st Prize (Rank #1)', aw1_d: 'Ranked 1st university-wide in the campus finals',
+        aw2_t: '15th China Innovation & Entrepreneurship Competition (AI+Machinery) · Excellence Award', aw2_d: 'Co-hosted by MIIT Torch Center, Jiangsu MIIT & Xuzhou Gov.',
+        aw3_t: 'National College Data Analysis Competition · 1st Prize', aw3_d: 'Recognized for industrial data modeling and algorithmic analysis',
+        aw4_t: '19th "Challenge Cup" Academic Tech Competition · Jiangsu 3rd Prize', aw4_d: 'Interdisciplinary industrial software & AI innovation',
+        aw5_t: 'Bank of China Cup Innovation Competition · Provincial 3rd Prize', aw5_d: 'Early-stage commercialization & technical feasibility recognition',
+        aw6_t: 'National 2nd Scholarship / Jiangsu Outstanding Student Leader / Xuzhou Startup Leader', aw6_d: 'Top academic rank with 1,000+ hours of community volunteering',
+        ed1_y: 'B.Eng.', ed1_t: 'Nanjing Audit Univ. Jinshen College · Computer Science', ed1_d: 'Focus on compilers, algorithms, and architecture; supported by university leadership for industry-academia R&D.',
+        ed2_y: 'Exec.', ed2_t: 'Tsinghua University SCE · Startup Talent Program', ed2_d: 'Completed strategic positioning, corporate governance, and tech commercialization modules.',
+        ed3_y: 'Assoc.', ed3_t: 'Jiangsu Safety Tech College · 2026 Outstanding Graduate', ed3_d: 'Ranked #1 in Digital Media Tech; National 2nd Scholarship & Social Practice Award.',
+        ed4_y: 'Skills', ed4_t: 'Multidisciplinary Certifications & Stack', ed4_d: 'National Data Analytics Cert, Japanese N4, Full-Stack Architecture & AI Lead-Gen Systems.',
+        sec4_title: 'Benchmark Clients & Academic Backing', sec4_desc: 'Validated by internet giants, EV/autonomous OEMs, heavy machinery leaders, and national supercomputing centers, alongside Nankai University research teams.',
+        sec4_bullets: '• Powered by National Supercomputing Center in Jinan<br />• Backed by Nankai University national-level faculty & 150-member R&D team',
+        sec5_title: 'Let’s Build & Scale Together', sec5_desc: 'Open to industrial software integration, embodied AI data pipelines, B300 compute/API access, and strategic ventures.',
+        copyright: '© 2026 Morris (Mao Xuecheng) · Xuzhou Wenque Tech / Jinan Bailing Tech',
+        copy_phone: 'Phone copied', copy_email: 'Email copied'
+      },
+      id: {
+        htmlLang: 'id',
+        pageTitle: 'Morris (Mao Xuecheng) | Perangkat Lunak Industri · Embodied AI · Infrastruktur Komputasi',
+        brand: 'Morris · Profil Eksekutif',
+        nav_ventures: 'Perusahaan', nav_projects: 'Proyek', nav_credentials: 'HAKI & Prestasi', nav_ecosystem: 'Ekosistem', nav_cta: 'Kontak',
+        hero_eyebrow: 'AKSI NYATA DI ATAS KATA · C65 M100 Y0 K20',
+        hero_name: 'Morris (Mao Xuecheng)',
+        hero_tagline: 'Simulasi Industri · Embodied AI · Infrastruktur Komputasi',
+        hero_subtitle: 'Pendiri berlatar belakang Ilmu Komputer yang memimpin dua perusahaan teknologi tinggi. Berfokus pada <strong>substitusi perangkat lunak simulasi CNC industri</strong>, <strong>data flywheel & model vertikal Embodied AI</strong>, serta <strong>infrastruktur superkomputer nasional & gateway API</strong>.',
+        role_1: 'Xuzhou Wenque Tech · Pendiri & CEO',
+        role_2: 'Jinan Bailing Tech · Kepala Teknologi & Implementasi',
+        role_3: 'Alumni Program Kewirausahaan Universitas Tsinghua SCE',
+        btn_explore: 'Jelajahi 6 Proyek Utama →',
+        btn_credentials: 'Lihat Paten & Penghargaan',
+        card_name: 'Morris (Mao Xuecheng)',
+        card_title: 'Pendiri Teknologi / Arsitek Full-Stack',
+        meta_edu_lbl: 'Universitas', meta_edu_val: 'Nanjing Audit Univ. Jinshen College · Ilmu Komputer',
+        meta_prev_lbl: 'Pendidikan Awal', meta_prev_val: 'Jiangsu Safety Tech College · Lulusan Terbaik (#1)',
+        meta_comp_lbl: 'Basis Komputasi', meta_comp_val: 'Ekosistem National Supercomputing Center Jinan',
+        meta_ip_lbl: 'Kekayaan Intelektual', meta_ip_val: '2 Paten Invensi + 1 Utilitas + 2 Hak Cipta + 5 Domain',
+        meta_qual_lbl: 'Kualifikasi', meta_qual_val: 'JLPT N4 / Sertifikasi Analisis Data / 1.000+ Jam Relawan',
+        card_motto: '“Menembus monopoli perangkat lunak industri asing dengan rekayasa inti, serta menggerakkan Embodied AI ke dunia fisik melalui data dan komputasi berkualitas tinggi.”',
+        kpi_u1: '', kpi_l1: 'Perusahaan Teknologi Tinggi Didirikan',
+        kpi_u2: '', kpi_l2: 'Paten Inti & Hak Cipta Perangkat Lunak',
+        kpi_l3: 'Aset Video Robot Nyata Multi-Sudut',
+        kpi_l4: 'Peningkatan Efisiensi Pemesinan CNC',
+        kpi_l5: 'Tingkat Penerimaan Data Awal (bool.asia)',
+        sec1_title: 'Entitas Teknologi yang Didirikan',
+        sec1_desc: 'Menggabungkan kemandirian perangkat lunak industri dengan infrastruktur komputasi AI dan data multimodal.',
+        v1_name: 'Xuzhou Wenque Technology Co., Ltd.', v1_role: 'Pendiri & CEO · Berdiri Juli 2025', v1_badge: 'Startup Unggulan Xuzhou',
+        v1_desc: 'Terpilih dalam Taman Kewirausahaan Universitas Xuzhou (Angkatan 98). Mengembangkan sistem simulasi verifikasi NC & optimasi kecepatan "Yingren" untuk menggantikan Vericut, telah diterapkan di XCMG, SINOTRUK, dan Meide Casting.',
+        v1_t1: 'Simulasi NC Industri', v1_t2: 'Deteksi Tabrakan', v1_t3: 'Optimasi Kecepatan Adaptif',
+        v2_name: 'Jinan Bailing Technology Co., Ltd.', v2_role: 'Kepala Teknologi & Implementasi', v2_badge: 'Berbasis di NSCC Jinan',
+        v2_desc: 'Didukung klaster komputasi heterogen National Supercomputing Center Jinan, berfokus pada World Model presisi tinggi, algoritma Embodied AI, orkestrasi GPU, serta pipeline rekayasa dan anotasi data industri.',
+        v2_t1: 'NSCC Jinan', v2_t3: 'Gateway API FluidIndex', v2_t4: 'Rekayasa Data Industri',
+        sec2_title: 'Matriks Proyek Utama',
+        flt_all: 'Semua Proyek (6)', flt_ind: 'Software Industri', flt_emb: 'Embodied AI & Data', flt_inf: 'Komputasi & API', flt_saas: 'Open Source & SaaS',
+        view_detail: 'Detail →',
+        p1_title: 'Yingren: SaaS Simulasi CNC & Optimasi Adaptif', p1_sum: 'Verifikasi kode NC dan optimasi laju pemakanan untuk manufaktur presisi, dilengkapi deteksi tabrakan spasial dan analisis beban potong dinamis.', p1_m1: 'Efisiensi Pemesinan', p1_m2v: '2 Paten + 2 HC', p1_m2: 'HAKI Penemu Pertama', p1_ft: 'Diterapkan di XCMG / SINOTRUK',
+        p2_title: 'Model Vertikal Embodied AI & Robot Sanitasi/Hotel', p2_sum: 'Arsitektur 3 lapis: Otak Cloud L1 (VLM/VLA + FoundationPose), Serebelum L2 (DP3 + sensor gaya 6-sumbu), dan kontrol real-time ROS 2 L3.', p2_m1: 'Sasis 3-Lengan IP66', p2_m2: 'Target Keberhasilan Demo', p2_ft: 'Hibah Yuhang / Rencana 9 Bulan',
+        p3_title: 'Platform Ekosistem Data Embodied (bool.asia)', p3_sum: 'Arsitektur full-stack yang menghubungkan 320+ tim untuk pengumpulan & anotasi data multimodal, menghasilkan arus kas sekaligus melatih model vertikal.', p3_m1: 'Frame Multimodal Nyata', p3_m2: 'Rata-rata Pengiriman', p3_ft: '320+ Tim / 12+ Modalitas',
+        p4_title: 'Gateway API FluidIndex & Suplai Komputasi B300', p4_sum: 'Gateway kompatibel OpenAI berkonkurensi tinggi (NestJS + PostgreSQL row lock + Redis) serta akses node HGX-B300 dan agregasi LLM terkemuka.', p4_m1: 'Suplai Superkomputer B300', p4_m2: 'DeepSeek / Kimi / GLM', p4_ft: 'Infrastruktur API Perusahaan',
+        p5_title: 'MoonFraming: Pustaka Framing Byte-Stream MoonBit', p5_sum: 'Proyek infrastruktur Hackathon dalam MoonBit murni tanpa ikatan runtime, menangani framing TCP/WebSocket dengan uLEB128 dan IEEE CRC-32.', p5_m1: 'Dekode Inkremental & Batch', p5_m2: 'Checksum & Batas Aman',
+        p6_title: 'BrowserPilot AI Agent SaaS & Proyek Global', p6_sum: 'SaaS otomatisasi browser AI full-stack (Next.js 16 + FastAPI + Playwright + Multi-LLM ReAct + LemonSqueezy), serta proyek koreksi ASR Indonesia & Trace.', p6_m1: 'Eksekusi ReAct Multi-LLM', p6_m2: 'Penagihan SaaS Global', p6_ft: 'Pengiriman R&D Lintas Negara',
+        sec3_title: 'Kekayaan Intelektual, Penghargaan & Kualifikasi', sec3_desc: 'Seluruh paten, hak cipta, domain, dan penghargaan berasal dari riset nyata dan komersialisasi industri.',
+        tab_ip: 'HAKI & Aset Domain', tab_awards: 'Kompetisi & Beasiswa', tab_edu: 'Pendidikan & Keahlian',
+        th_type: 'Jenis', th_name: 'Judul / Registrasi', th_owner: 'Pemegang / Peran', th_status: 'Nomor / Status',
+        ip_t1: 'Paten Invensi', ip_n1: 'Optimasi Pemesinan Kecepatan Variabel Adaptif Berbasis Kode NC', ip_o1: 'Penemu Pertama (Wenque Tech)', ip_s1: 'Pemeriksaan · 202610760680X',
+        ip_t2: 'Paten Invensi', ip_n2: 'Teknologi Anti-Tabrakan CNC Berbasis Simulasi Kode Presisi Tinggi', ip_o2: 'Penemu Pertama (Wenque Tech)', ip_s2: 'Pemeriksaan · 2026107607817',
+        ip_t3: 'Paten Utilitas', ip_n3: 'Peralatan Pemesinan CNC dengan Antarmuka Operasi Visual', ip_o3: 'Penemu Pertama (Wenque Tech)', ip_s3: 'Disetujui · 2026210892643',
+        ip_t4: 'Hak Cipta Software', ip_n4: 'Sistem Simulasi Verifikasi Program NC V1.0', ip_o4: 'Penulis Pertama',
+        ip_t5: 'Hak Cipta Software', ip_n5: 'Sistem Optimasi Kecepatan Program NC V1.0', ip_o5: 'Penulis Pertama',
+        aw1_t: 'Kompetisi Inovasi Mahasiswa Internasional Tiongkok · Juara 1 Kampus (#1)', aw1_d: 'Meraih peringkat pertama tingkat universitas pada final kampus',
+        aw2_t: 'Kompetisi Inovasi & Kewirausahaan Tiongkok ke-15 (AI+Mesin) · Penghargaan Keunggulan', aw2_d: 'Diselenggarakan oleh MIIT Torch Center & Pemerintah Xuzhou',
+        aw3_t: 'Kompetisi Analisis Data Mahasiswa Nasional · Juara 1', aw3_d: 'Diakui atas kemampuan pemodelan data industri dan algoritma',
+        aw4_t: 'Kompetisi Teknologi Akademik "Challenge Cup" ke-19 · Juara 3 Provinsi Jiangsu', aw4_d: 'Karya inovatif lintas disiplin perangkat lunak industri & AI',
+        aw5_t: 'Kompetisi Inovasi Bank of China Cup · Juara 3 Provinsi', aw5_d: 'Validasi komersialisasi dan kelayakan teknis tahap awal',
+        aw6_t: 'Beasiswa Nasional Kelas 2 / Pemimpin Mahasiswa Teladan / Pendiri Startup Unggulan Xuzhou', aw6_d: 'Prestasi akademik peringkat #1 dengan 1.000+ jam pengabdian masyarakat',
+        ed1_y: 'S1', ed1_t: 'Nanjing Audit Univ. Jinshen College · Ilmu Komputer', ed1_d: 'Fokus pada kompilator, algoritma, dan arsitektur; didukung penuh oleh pimpinan universitas.',
+        ed2_y: 'Eksekutif', ed2_t: 'Universitas Tsinghua SCE · Program Bakat Startup', ed2_d: 'Menyelesaikan modul strategi bisnis, tata kelola perusahaan, dan komersialisasi teknologi.',
+        ed3_y: 'Diploma', ed3_t: 'Jiangsu Safety Tech College · Lulusan Terbaik 2026', ed3_d: 'Peringkat #1 jurusan Teknologi Media Digital; penerima Beasiswa Nasional.',
+        ed4_y: 'Keahlian', ed4_t: 'Matriks Kompetensi & Sertifikasi', ed4_d: 'Sertifikasi Analisis Data Nasional, Bahasa Jepang N4, Arsitektur Full-Stack & Sistem AI.',
+        sec4_title: 'Klien Utama & Dukungan Akademik', sec4_desc: 'Telah teruji oleh raksasa internet, produsen otomotif EV, pemimpin alat berat, dan pusat superkomputer nasional, serta bermitra dengan tim riset Universitas Nankai.',
+        sec4_bullets: '• Didukung node komputasi National Supercomputing Center in Jinan<br />• Kolaborasi riset bersama tim 150 peneliti Universitas Nankai',
+        sec5_title: 'Mari Berkolaborasi & Membangun Solusi Nyata', sec5_desc: 'Terbuka untuk integrasi software industri, pipeline data Embodied AI, akses komputasi B300/API, dan kemitraan strategis.',
+        copyright: '© 2026 Morris (Mao Xuecheng) · Xuzhou Wenque Tech / Jinan Bailing Tech',
+        copy_phone: 'Nomor telepon disalin', copy_email: 'Email disalin'
+      },
+      ja: {
+        htmlLang: 'ja',
+        pageTitle: 'Morris（毛学成）| 産業ソフトウェア・身体性AI・計算基盤',
+        brand: 'Morris · 毛学成',
+        nav_ventures: '設立企業', nav_projects: '主要プロジェクト', nav_credentials: '知財・受賞歴', nav_ecosystem: '産学連携', nav_cta: 'お問い合わせ',
+        hero_eyebrow: '知行合一・言より行 · C65 M100 Y0 K20',
+        hero_name: 'Morris（毛学成）',
+        hero_tagline: '産業シミュレーション · 身体性AI · 計算基盤',
+        hero_subtitle: 'コンピュータサイエンス専攻。2社のハイテク企業を連続起業・主導し、<strong>国産NC工作機械シミュレーション</strong>、<strong>身体性AIデータフライホイール＆特化型基盤モデル</strong>、<strong>国家スパコン連携計算基盤・APIゲートウェイ</strong>の研究開発から大手製造ラインへの実装までを一貫して推進。',
+        role_1: '徐州文雀科技 · 創業者兼 CEO',
+        role_2: '済南柏泠科技 · 技術・事業実装責任者',
+        role_3: '清華大学継続教育学院 起業人材研修修了',
+        btn_explore: '6大プロジェクトを見る →',
+        btn_credentials: '特許・受賞歴を確認',
+        card_name: 'Morris（毛学成）',
+        card_title: 'テックファウンダー / フルスタックアーキテクト',
+        meta_edu_lbl: '在籍大学', meta_edu_val: '南京審計大学金審学院 · 計算機科学技術',
+        meta_prev_lbl: '前歴', meta_prev_val: '江蘇安全技術職業学院 · 2026年優秀卒業生（首席）',
+        meta_comp_lbl: '計算基盤', meta_comp_val: '国家スーパーコンピューティング済南センター連携',
+        meta_ip_lbl: '知的財産', meta_ip_val: '特許出願2 + 実用新案1 + ソフト著作権2 + ドメイン5',
+        meta_qual_lbl: '資格・実績', meta_qual_val: '日本語4級 / 全国データ分析技能 / ボランティア1000h+',
+        card_motto: '「コアエンジニアリングで海外産業ソフトの壁を打破し、高品質なデータと計算基盤で身体性AIを現実世界へ実装する。」',
+        kpi_u1: '社', kpi_l1: '創業・主導したハイテク企業',
+        kpi_u2: '件', kpi_l2: 'コア特許・ソフトウェア著作権',
+        kpi_l3: '実機マルチカメラ動画データ資産',
+        kpi_l4: '複雑部品NC加工効率の向上幅',
+        kpi_l5: 'bool.asia データ初回検収合格率',
+        sec1_title: '主導・設立したテクノロジー企業',
+        sec1_desc: '国産産業基盤ソフトウェアの自立化とAI計算・データ基盤の両輪で事業を展開。',
+        v1_name: '徐州文雀科技有限公司', v1_role: '創業者兼 CEO · 2025年7月設立', v1_badge: '徐州市優秀起業企業',
+        v1_desc: '徐州市第98期大学起業園採択プロジェクト。Vericut等の海外製品に依存してきたNC加工シミュレーションの国産化を目指し、「迎刃而解」を開発。徐工集団、中国重汽、玫徳鋳造などに導入。',
+        v1_t1: '産業NCシミュレーション', v1_t2: '干渉・衝突検知', v1_t3: '適応送り速度最適化',
+        v2_name: '済南柏泠科技有限公司', v2_role: '技術責任者 / 事業実装責任者', v2_badge: '国家スパコン済南センター入居',
+        v2_desc: '国家スーパーコンピューティング済南センターの異種計算クラスターを基盤に、高精度世界モデル、身体性AIアルゴリズム、GPU計算スケジューリング、産業データエンジニアリングを構築。',
+        v2_t1: '国家スパコン済南', v2_t3: 'FluidIndex APIゲートウェイ', v2_t4: '産業データ基盤',
+        sec2_title: '主要プロジェクト一覧',
+        flt_all: 'すべて (6)', flt_ind: '産業ソフト', flt_emb: '身体性AI・データ', flt_inf: '計算基盤・API', flt_saas: 'OSS・海外SaaS',
+        view_detail: '詳細を見る →',
+        p1_title: '「迎刃而解」産業NCシミュレーション＆最適化SaaS', p1_sum: 'NCプログラム検証と適応送り速度最適化SaaS。空間干渉検知、補間経路再構築、動的切削負荷解析により国産代替を実現。', p1_m1: '複雑部品加工効率', p1_m2v: '特許2 + 著作権2', p1_m2: '筆頭発明者知財', p1_ft: '徐工 / 中国重汽等で稼働',
+        p2_title: '身体性AI特化モデル＆清掃・ホテルロボット', p2_sum: 'L1クラウド認知脳（VLM/VLA + FoundationPose）、L2車載小脳（DP3 + 6軸力覚制御）、L3 ROS 2リアルタイム安全制御の3層アーキテクチャ。', p2_m1: 'IP66 / 3アーム重負荷機', p2_m2: '実証目標成功率', p2_ft: '余杭区申請 / 9ヶ月計画',
+        p3_title: '中飛ブール身体性データ基盤（bool.asia）', p3_sum: 'フルスタック開発を単独完遂。クラウドソーシングと3段階検収によりキャッシュフローを生み出しつつ、特化モデル用の実機データを独占蓄積。', p3_m1: '実機マルチモーダルフレーム', p3_m2: '平均納品サイクル', p3_ft: '320+ チーム / 12+ モダリティ',
+        p4_title: 'FluidIndex APIゲートウェイ＆B300計算供給', p4_sum: 'NestJS + PostgreSQL行ロック + Redis分散レート制限によるOpenAI互換ゲートウェイと、国家スパコンHGX-B300および主要LLMチャネルを統合。', p4_m1: 'スパコン直供＆先物チャネル', p4_m2: 'DeepSeek / Kimi / GLM', p4_ft: 'エンタープライズAPI基盤',
+        p5_title: 'MoonFraming 純MoonBitバイトストリーム分割ライブラリ', p5_sum: 'ハッカソン発のネットワーク基盤OSS。uLEB128、固定長ヘッダ、IEEE CRC-32を備え、Wasm / Wasm-GC / JSに対応。', p5_m1: '増分・バッチ二重デコード', p5_m2: 'ストリーム検証＆安全予算',
+        p6_title: 'BrowserPilot AIエージェントSaaS＆海外特化案件', p6_sum: 'Next.js 16 + FastAPI + Playwright + Multi-LLM ReAct LoopによるAIブラウザ自動化SaaS、およびインドネシア語ASR校正・Trace専門案件。', p6_m1: '自律型Multi-LLM実行', p6_m2: 'グローバルSaaS課金', p6_ft: 'クロスボーダーR&D納品',
+        sec3_title: '知的財産・受賞歴・資格', sec3_desc: 'すべての特許、著作権、ドメイン、受賞歴は実際の研究開発と事業実装の成果です。',
+        tab_ip: '知財・ドメイン資産', tab_awards: '競技大会・奨学金', tab_edu: '学歴・保有資格',
+        th_type: '種別', th_name: '名称 / 登録内容', th_owner: '権利者 / 順位', th_status: '番号 / ステータス',
+        ip_t1: '発明特許', ip_n1: 'NCコードに基づく適応変速加工最適化技術', ip_o1: '筆頭発明者（徐州文雀科技）', ip_s1: '審査中 · 202610760680X',
+        ip_t2: '発明特許', ip_n2: '高精度コードシミュレーションに基づくNC加工衝突防止技術', ip_o2: '筆頭発明者（徐州文雀科技）', ip_s2: '審査中 · 2026107607817',
+        ip_t3: '実用新案', ip_n3: '視覚的操作インターフェースを備えたNC加工装置', ip_o3: '筆頭発明者（徐州文雀科技）', ip_s3: '登録済 · 2026210892643',
+        ip_t4: 'ソフト著作権', ip_n4: 'NCプログラム検証シミュレーションシステム V1.0', ip_o4: '筆頭著作者',
+        ip_t5: 'ソフト著作権', ip_n5: 'NCプログラム変速最適化システム V1.0', ip_o5: '筆頭著作者',
+        aw1_t: '中国国際大学生イノベーション大会 · 学内決勝1等賞（全学1位）', aw1_d: '全学トップの成績で決勝1等賞を受賞',
+        aw2_t: '第15回中国イノベーション起業大会 AI+建設機械部門 · 優秀賞', aw2_d: '工業情報化部トーチセンター・江蘇省工信庁等共催',
+        aw3_t: '全国大学生データ分析コンペティション · 1等賞', aw3_d: '産業データモデリングとアルゴリズム解析力を評価',
+        aw4_t: '第19回「挑戦杯」大学生学術科学技術作品大会 · 江蘇省3等賞', aw4_d: '産業ソフトウェアとAIの融合研究作品',
+        aw5_t: '中国銀行杯イノベーション起業大会 · 省大会3等賞', aw5_d: '初期事業の商業化と技術的実現性を評価',
+        aw6_t: '国家2等奨学金 / 江蘇省優秀学生幹部 / 徐州市優秀起業企業責任者', aw6_d: '首席の学業成績と1,000時間以上のボランティア活動',
+        ed1_y: '学部', ed1_t: '南京審計大学金審学院 · 計算機科学技術', ed1_d: 'コンパイラ技術・アルゴリズム・計算機構造を専攻し、学長面談による産学連携支援を獲得。',
+        ed2_y: '研修', ed2_t: '清華大学継続教育学院 · 起業人材研修修了', ed2_d: '戦略立案、企業統治、技術商業化、資本連携を体系的に修了。',
+        ed3_y: '専門', ed3_t: '江蘇安全技術職業学院 · 2026年優秀卒業生', ed3_d: 'デジタルメディア技術専攻首席、国家2等奨学金受賞。',
+        ed4_y: '技能', ed4_t: '複合スキル＆公的資格', ed4_d: '全国データ分析技能資格、日本語4級、フルスタック開発・AI集客システム実装。',
+        sec4_title: '主要顧客・学術連携パートナー', sec4_desc: 'IT大手、EV/自動運転メーカー、重工大手、国家スパコンで実績を検証済み。南開大学の先端研究チームとも連携。',
+        sec4_bullets: '• 国家スーパーコンピューティング済南センター計算ノード連携<br />• 南開大学150名規模の研究開発チームとの産学連携',
+        sec5_title: '技術連携・事業共創のご相談', sec5_desc: '産業ソフト共同開発、身体性AIデータ構築、B300計算資源/API連携などお気軽にご連絡ください。',
+        copyright: '© 2026 Morris（毛学成）· 徐州文雀科技有限公司 / 済南柏泠科技有限公司',
+        copy_phone: '電話番号をコピーしました', copy_email: 'メールアドレスをコピーしました'
+      },
+      ko: {
+        htmlLang: 'ko',
+        pageTitle: 'Morris (모학성) | 산업 소프트웨어 · 임바디드 AI · 컴퓨팅 인프라',
+        brand: 'Morris · 모학성',
+        nav_ventures: '설립 기업', nav_projects: '핵심 프로젝트', nav_credentials: '지재권·수상', nav_ecosystem: '산학 협력', nav_cta: '비즈니스 문의',
+        hero_eyebrow: '지행합일 · 언행일치 · C65 M100 Y0 K20',
+        hero_name: 'Morris (모학성)',
+        hero_tagline: '산업 시뮬레이션 · 임바디드 AI · 컴퓨팅 인프라',
+        hero_subtitle: '컴퓨터공학 기반의 연쇄 창업가로 두 개의 하이테크 기업을 이끌며, <strong>국산 산업용 NC 시뮬레이션 대체</strong>, <strong>임바디드 AI 데이터 플라이휠 및 특화 모델</strong>, <strong>국가 슈퍼컴퓨팅 및 API 게이트웨이 인프라</strong>의 연구개발부터 대형 제조 라인 상용화까지 전 과정을 주도하고 있습니다.',
+        role_1: '쉬저우 원췌 테크놀로지 · 창업자 겸 CEO',
+        role_2: '지난 바이링 테크놀로지 · 기술 및 사업총괄',
+        role_3: '칭화대학교 평생교육원 창업인재 과정 수료',
+        btn_explore: '6대 핵심 프로젝트 보기 →',
+        btn_credentials: '특허 및 수상 이력 확인',
+        card_name: 'Morris (모학성)',
+        card_title: '테크 파운더 / 풀스택 아키텍트',
+        meta_edu_lbl: '학사 과정', meta_edu_val: '난징심계대학 진선학원 · 컴퓨터과학기술',
+        meta_prev_lbl: '이전 학력', meta_prev_val: '장쑤안전기술직업학원 · 2026 우수졸업생 (전체 1위)',
+        meta_comp_lbl: '컴퓨팅 기반', meta_comp_val: '국가 슈퍼컴퓨팅 지난센터 협력 생태계',
+        meta_ip_lbl: '지식재산권', meta_ip_val: '발명특허 2 + 실용신안 1 + SW저작권 2 + 도메인 5',
+        meta_qual_lbl: '자격 및 활동', meta_qual_val: '일본어 4급 / 전국 데이터분석 자격 / 봉사 1,000h+',
+        card_motto: '“탄탄한 코어 엔지니어링으로 해외 산업 소프트웨어의 장벽을 넘고, 고품질 데이터와 컴퓨팅 인프라로 임바디드 AI를 물리 세계에 구현합니다.”',
+        kpi_u1: '개', kpi_l1: '창업·주도 하이테크 기업',
+        kpi_u2: '건', kpi_l2: '핵심 특허 및 SW 저작권',
+        kpi_l3: '다중 시점 실기 로봇 영상 데이터',
+        kpi_l4: '복잡 부품 CNC 가공 효율 향상',
+        kpi_l5: 'bool.asia 데이터 1차 검수 통과율',
+        sec1_title: '설립 및 주도 기술 기업',
+        sec1_desc: '국산 산업 기반 소프트웨어 자립과 AI 컴퓨팅·데이터 인프라의 양대 축으로 시너지를 창출합니다.',
+        v1_name: '쉬저우 원췌 테크놀로지', v1_role: '창업자 겸 CEO · 2025년 7월 설립', v1_badge: '쉬저우시 우수 창업기업',
+        v1_desc: '쉬저우시 제98기 대학생 창업원 입주 기업. Vericut 등 외산 소프트웨어에 의존하던 NC 가공 시뮬레이션을 대체하는 "잉런얼제" 시스템을 개발하여 XCMG, SINOTRUK, 메이드 주조 등 선도 제조사에 공급했습니다.',
+        v1_t1: '산업용 NC 시뮬레이션', v1_t2: '충돌 간섭 감지', v1_t3: '적응형 이송속도 최적화',
+        v2_name: '지난 바이링 테크놀로지', v2_role: '기술 총괄 / 사업 안착 책임자', v2_badge: '국가 슈퍼컴 지난센터 입주',
+        v2_desc: '국가 슈퍼컴퓨팅 지난센터의 이기종 연산 클러스터를 기반으로 고정밀 월드 모델, 임바디드 AI 알고리즘, GPU 연산 스케줄링 및 산업용 데이터 정제·어노테이션 파이프라인을 구축합니다.',
+        v2_t1: '국가 슈퍼컴 지난센터', v2_t3: 'FluidIndex API 게이트웨이', v2_t4: '산업용 데이터 엔지니어링',
+        sec2_title: '핵심 프로젝트 포트폴리오',
+        flt_all: '전체 프로젝트 (6)', flt_ind: '산업 소프트웨어', flt_emb: '임바디드 AI·데이터', flt_inf: '컴퓨팅·API', flt_saas: '오픈소스·글로벌 SaaS',
+        view_detail: '상세 보기 →',
+        p1_title: '「잉런얼제」 산업용 CNC 시뮬레이션 및 최적화 SaaS', p1_sum: 'NC 코드 검증 및 적응형 이송속도 최적화 SaaS. 공간 간섭 충돌 감지, 보간 경로 재구성 및 동적 절삭 부하 분석으로 국산화를 실현했습니다.', p1_m1: '복잡 부품 가공 효율', p1_m2v: '특허 2 + 저작권 2', p1_m2: '제1발명자 지재권', p1_ft: 'XCMG / SINOTRUK 현장 적용',
+        p2_title: '임바디드 AI 특화 모델 & 환경·호텔 로봇', p2_sum: 'L1 클라우드 인지 브레인(VLM/VLA + FoundationPose), L2 온보드 소뇌(DP3 + 6축 힘 제어), L3 ROS 2 실시간 안전 제어의 3계층 아키텍처.', p2_m1: 'IP66 / 3-Arm 중량형', p2_m2: '시범 운행 목표 성공률', p2_ft: '위항구 지원 / 9개월 로드맵',
+        p3_title: '중페이 불(bool.asia) 임바디드 데이터 생태계 플랫폼', p3_sum: '풀스택 아키텍처를 단독 개발. 크라우드소싱 매칭과 3단계 검수로 현금흐름을 창출함과 동시에 특화 모델용 실기 멀티모달 데이터를 독점 축적합니다.', p3_m1: '실기 멀티모달 프레임 자산', p3_m2: '평균 납품 주기', p3_ft: '320+ 팀 / 12+ 모달리티',
+        p4_title: 'FluidIndex API 게이트웨이 & B300 슈퍼컴 공급', p4_sum: 'NestJS + PostgreSQL 행 잠금 + Redis 분산 제어 기반 OpenAI 호환 게이트웨이와 국가 슈퍼컴 HGX-B300 및 주요 LLM 채널 통합.', p4_m1: '슈퍼컴 직공급 및 선물 채널', p4_m2: 'DeepSeek / Kimi / GLM', p4_ft: '엔터프라이즈 API 인프라',
+        p5_title: 'MoonFraming 순수 MoonBit 바이트 스트림 프레이밍', p5_sum: '해커톤 네트워크 인프라 오픈소스. 런타임 종속 없이 uLEB128, 고정폭 헤더, IEEE CRC-32를 지원하며 Wasm/Wasm-GC/JS로 컴파일됩니다.', p5_m1: '증분 및 배치 디코딩', p5_m2: '스트림 검증 및 안전 예산',
+        p6_title: 'BrowserPilot AI 에이전트 SaaS & 글로벌 프로젝트', p6_sum: 'Next.js 16 + FastAPI + Playwright + Multi-LLM ReAct Loop 기반 AI 브라우저 자동화 SaaS 및 인도네시아어 ASR 교정·Trace 전문가 과업 수행.', p6_m1: '자율형 Multi-LLM 실행', p6_m2: '글로벌 SaaS 결제 통합', p6_ft: '크로스보더 R&D 납품',
+        sec3_title: '지식재산권, 수상 경력 및 자격', sec3_desc: '모든 특허, 저작권, 도메인 및 수상 실적은 실제 연구개발과 산업 상용화의 결실입니다.',
+        tab_ip: '지재권 및 도메인', tab_awards: '경진대회 및 장학금', tab_edu: '학력 및 보유 역량',
+        th_type: '유형', th_name: '명칭 / 등록 내용', th_owner: '권리자 / 순위', th_status: '등록번호 / 상태',
+        ip_t1: '발명특허', ip_n1: 'NC 코드 기반 적응형 변속 가공 최적화 기술', ip_o1: '제1발명자 (원췌 테크)', ip_s1: '심사 중 · 202610760680X',
+        ip_t2: '발명특허', ip_n2: '고정밀 코드 시뮬레이션 기반 CNC 가공 충돌 방지 기술', ip_o2: '제1발명자 (원췌 테크)', ip_s2: '심사 중 · 2026107607817',
+        ip_t3: '실용신안', ip_n3: '시각적 조작 인터페이스를 갖춘 CNC 가공 장비', ip_o3: '제1발명자 (원췌 테크)', ip_s3: '등록 완료 · 2026210892643',
+        ip_t4: 'SW 저작권', ip_n4: 'NC 프로그램 검증 시뮬레이션 시스템 V1.0', ip_o4: '제1저작자',
+        ip_t5: 'SW 저작권', ip_n5: 'NC 프로그램 변속 최적화 시스템 V1.0', ip_o5: '제1저작자',
+        aw1_t: '중국국제대학생혁신대회 · 교내 결선 1등상 (전체 1위)', aw1_d: '전체 1위 성적으로 교내 결선 1등상 수상',
+        aw2_t: '제15회 중국혁신창업대회 AI+건설기계 부문 · 우수상', aw2_d: '공신부 횃불센터 및 장쑤성 공신청 등 공동 주최',
+        aw3_t: '전국대학생 데이터분석 경진대회 · 1등상', aw3_d: '산업 데이터 모델링 및 알고리즘 분석 역량 입증',
+        aw4_t: '제19회 "챌린지컵" 학술과학기술작품대회 · 장쑤성 3등상', aw4_d: '산업 소프트웨어 및 AI 융합 연구 작품',
+        aw5_t: '중국은행배 혁신창업대회 · 성급 3등상', aw5_d: '초기 사업화 모델 및 기술 타당성 인정',
+        aw6_t: '국가 2등 장학금 / 장쑤성 우수학생간부 / 쉬저우시 우수 창업기업 대표', aw6_d: '학과 수석 성적 및 1,000시간 이상의 사회봉사',
+        ed1_y: '학사', ed1_t: '난징심계대학 진선학원 · 컴퓨터과학기술', ed1_d: '컴파일러, 알고리즘, 컴퓨터 구조 심화 및 대학 본부 산학협력 전폭 지원.',
+        ed2_y: '연수', ed2_t: '칭화대학교 평생교육원 · 창업인재 과정 수료', ed2_d: '전략 포지셔닝, 기업 거버넌스, 기술 사업화 및 자본 연계 과정 이수.',
+        ed3_y: '전문학사', ed3_t: '장쑤안전기술직업학원 · 2026 우수졸업생', ed3_d: '디지털미디어기술 전공 전체 1위, 국가 2등 장학금 수혜.',
+        ed4_y: '역량', ed4_t: '융합형 기술 스택 및 공인 자격', ed4_d: '전국 데이터분석 자격, 일본어 4급, 풀스택 개발 및 AI 마케팅 자동화 구축.',
+        sec4_title: '핵심 고객사 및 학술 파트너십', sec4_desc: '인터넷 빅테크, 전기차/자율주행 OEM, 중공업 선도 기업 및 국가 슈퍼컴센터의 검증을 거쳤으며, 난카이대학교 연구진과 긴밀히 협력하고 있습니다.',
+        sec4_bullets: '• 국가 슈퍼컴퓨팅 지난센터 연산 노드 연계<br />• 난카이대학교 150명 규모 연구개발팀과의 산학 협력',
+        sec5_title: '기술 협력 및 비즈니스 논의를 기다립니다', sec5_desc: '산업 소프트웨어 연동, 임바디드 AI 데이터 파이프라인, B300 연산/API 연동 및 전략적 협업을 환영합니다.',
+        copyright: '© 2026 Morris (모학성) · 쉬저우 원췌 테크놀로지 / 지난 바이링 테크놀로지',
+        copy_phone: '전화번호가 복사되었습니다', copy_email: '이메일이 복사되었습니다'
+      }
+    };
+
+    const modalData = {
+      yingren: {
+        zh: {
+          kicker: '01 / 工业基础软件 SaaS', title: '《迎刃而解》工业数控仿真与自适应优化系统',
+          desc: '由徐州文雀科技有限公司主导研发，直击我国高端数控加工领域长期依赖美国 Vericut 的“卡脖子”痛点，提供高性价比、高精度的国产工业软件方案。',
+          bullets: ['核心技术：攻克空间干涉碰撞自适应检测、插补路径精准重构与动态切削负荷预测算法。', '降本增效：加工前虚拟验证与防撞拦截，自动平滑优化进给速率，复杂零件加工效率提升 15% 以上。', '产业验证：已落地服务徐工集团、中国重汽、玫德铸造等重工制造龙头产线。', '赛事与知产：第一发明人获 2 项发明专利受理 + 1 项实用新型授权 + 2 项软著，获第十五届中国创新创业大赛 AI+工程机械专业赛优秀奖。'],
+          tags: ['NC 代码解析', '空间碰撞检测', '自适应进给优化', 'SaaS', '徐工集团']
+        },
+        en: {
+          kicker: '01 / INDUSTRIAL SAAS', title: 'Yingren: Industrial CNC Simulation & Optimization',
+          desc: 'Led by Xuzhou Wenque Technology to replace foreign software like Vericut in high-end CNC machining with high-precision domestic simulation.',
+          bullets: ['Core Tech: Spatial collision detection, interpolation path reconstruction, and dynamic cutting load prediction.', 'Efficiency: Pre-machining virtual verification and adaptive feedrate optimization boost complex part machining efficiency by 15%+.', 'Production Proven: Deployed at XCMG, SINOTRUK, and Meide Casting.', 'IP & Awards: 2 invention patents (review), 1 utility patent (granted), 2 software copyrights, and 15th China Innovation Competition Excellence Award.'],
+          tags: ['NC Parsing', 'Collision Detection', 'Adaptive Feedrate', 'SaaS', 'XCMG']
+        },
+        id: {
+          kicker: '01 / SOFTWARE INDUSTRI SAAS', title: 'Yingren: Simulasi CNC & Optimasi Adaptif',
+          desc: 'Dikembangkan oleh Xuzhou Wenque Tech untuk menggantikan dominasi perangkat lunak asing seperti Vericut pada pemesinan CNC presisi.',
+          bullets: ['Teknologi Inti: Deteksi tabrakan spasial, rekonstruksi jalur interpolasi, dan prediksi beban potong dinamis.', 'Efisiensi: Meningkatkan efisiensi pemesinan komponen kompleks hingga 15%+ sebelum eksekusi mesin nyata.', 'Validasi Industri: Diterapkan di XCMG, SINOTRUK, dan Meide Casting.', 'HAKI: 2 paten invensi, 1 paten utilitas, dan 2 hak cipta perangkat lunak sebagai penemu pertama.'],
+          tags: ['Parsing NC', 'Deteksi Tabrakan', 'Optimasi Adaptif', 'SaaS', 'XCMG']
+        },
+        ja: {
+          kicker: '01 / 産業ソフトウェア SaaS', title: '「迎刃而解」産業NCシミュレーション＆最適化',
+          desc: '徐州文雀科技が開発。Vericut等の海外製品に依存してきたハイエンドNC加工シミュレーションの国産代替を実現。',
+          bullets: ['コア技術：空間干渉衝突検知、補間経路再構築、動的切削負荷予測アルゴリズム。', '効果：加工前の仮想検証と送り速度の適応最適化により、複雑部品の加工効率を15%以上向上。', '導入実績：徐工集団、中国重汽、玫徳鋳造などの大手製造ラインで稼働。', '知財：筆頭発明者として特許2件審査中・実用新案1件登録・ソフト著作権2件取得。'],
+          tags: ['NC解析', '干渉検知', '適応送り最適化', 'SaaS', '徐工集団']
+        },
+        ko: {
+          kicker: '01 / 산업 소프트웨어 SaaS', title: '「잉런얼제」 산업용 CNC 시뮬레이션 및 최적화',
+          desc: '쉬저우 원췌 테크가 개발한 국산 NC 검증 및 이송속도 최적화 SaaS로, 외산 Vericut 의존 문제를 해결합니다.',
+          bullets: ['핵심 기술: 공간 간섭 충돌 감지, 보간 경로 재구성, 동적 절삭 부하 예측 알고리즘.', '효율 향상: 가공 전 가상 검증 및 속도 평활화로 복잡 부품 가공 효율 15% 이상 향상.', '현장 검증: XCMG, SINOTRUK, 메이드 주조 등 선도 제조 라인 적용.', '지재권: 제1발명자로 발명특허 2건(심사), 실용신안 1건(등록), SW저작권 2건 보유.'],
+          tags: ['NC 파싱', '충돌 감지', '이송속도 최적화', 'SaaS', 'XCMG']
+        }
+      },
+      embodied: {
+        zh: {
+          kicker: '02 / 具身智能与垂直场景机器人', title: '具身智能垂类大模型 & 环卫/酒店机器人',
+          desc: '面向复杂非结构化物理环境，构建云边端协同的三层具身智能控制架构，实现从多模态感知到高精柔顺力控操作的全链路闭环。',
+          bullets: ['L1 认知大脑：OpenVLA / π0 融合 FoundationPose + SAM-2 无标记 6D 位姿估计（误差 ≤ ±5mm）。', 'L2 运动小脑：DP3 策略结合末端六维力传感器，攻克满载 200 斤垃圾桶重心动态偏移与湿衣纠缠难题。', 'L3 实时安全：ROS 2 Humble + EtherCAT 硬实时总线与双回路急停，配 FSM 异常脱困与 5G 远程接管回流。', '工程规划：9 个月加速版整机方案（IP66 防护、三臂构型），目标示范运行成功率 ≥96%。'],
+          tags: ['VLM / VLA', 'DP3 六维力控', 'ROS 2 Humble', 'Isaac Lab', '世界模型']
+        },
+        en: {
+          kicker: '02 / EMBODIED AI', title: 'Embodied Vertical Models & Sanitation/Hotel Robots',
+          desc: 'Cloud-edge-device 3-tier Embodied AI control stack built for unstructured physical environments.',
+          bullets: ['L1 Cloud Brain: OpenVLA / π0 with FoundationPose + SAM-2 markerless 6D pose estimation (≤ ±5mm).', 'L2 Onboard Cerebellum: 3D Diffusion Policy (DP3) + 6-axis force control for heavy-load bin handling & laundry manipulation.', 'L3 Real-Time Safety: ROS 2 Humble + EtherCAT with dual hardware E-stop, FSM recovery, and 5G teleoperation data loop.', 'Roadmap: 9-month accelerated IP66 3-arm prototype targeting ≥96% demo success rate.'],
+          tags: ['VLM / VLA', 'DP3 Force Control', 'ROS 2 Humble', 'Isaac Lab', 'World Model']
+        },
+        id: {
+          kicker: '02 / EMBODIED AI', title: 'Model Vertikal Embodied AI & Robot Sanitasi/Hotel',
+          desc: 'Arsitektur kontrol Embodied AI 3 lapis (cloud-edge-device) untuk lingkungan fisik yang tidak terstruktur.',
+          bullets: ['Otak Cloud L1: OpenVLA / π0 dengan FoundationPose + SAM-2 estimasi pose 6D (≤ ±5mm).', 'Serebelum L2: 3D Diffusion Policy (DP3) + sensor gaya 6-sumbu untuk beban berat dan manipulasi tekstil.', 'Keamanan Real-Time L3: ROS 2 Humble + EtherCAT, pemulihan FSM, dan teleoperasi 5G.', 'Target: Prototipe 3-lengan IP66 dalam 9 bulan dengan tingkat keberhasilan ≥96%.'],
+          tags: ['VLM / VLA', 'DP3 Force Control', 'ROS 2 Humble', 'Isaac Lab', 'World Model']
+        },
+        ja: {
+          kicker: '02 / 身体性AI', title: '身体性AI特化モデル＆清掃・ホテルロボット',
+          desc: '非構造化環境向けにクラウド・エッジ・実機が協調する3層身体性AI制御アーキテクチャを構築。',
+          bullets: ['L1クラウド脳：OpenVLA / π0 と FoundationPose + SAM-2 による6D姿勢推定（誤差 ≤ ±5mm）。', 'L2車載小脳：DP3 と6軸力覚センサーにより重量ゴミ箱や湿った衣類の把持・操作を実現。', 'L3リアルタイム安全：ROS 2 Humble + EtherCAT 制御、FSM異常脱出、5G遠隔介入データ還流。', '開発計画：9ヶ月加速版のIP66・3アーム試作機で実証成功率96%以上を目標。'],
+          tags: ['VLM / VLA', 'DP3力覚制御', 'ROS 2 Humble', 'Isaac Lab', '世界モデル']
+        },
+        ko: {
+          kicker: '02 / 임바디드 AI', title: '임바디드 AI 특화 모델 & 환경·호텔 로봇',
+          desc: '비정형 물리 환경을 위한 클라우드-엣지-디바이스 3계층 임바디드 AI 제어 아키텍처를 구축했습니다.',
+          bullets: ['L1 클라우드 브레인: OpenVLA / π0 및 FoundationPose + SAM-2 기반 6D 자세 추정 (오차 ≤ ±5mm).', 'L2 온보드 소뇌: DP3 정책 및 6축 힘 센서를 결합해 고중량 수거함과 세탁물 핸들링 난제 해결.', 'L3 실시간 안전: ROS 2 Humble + EtherCAT 제어, FSM 예외 복구 및 5G 원격 관제 데이터 환류.', '로드맵: 9개월 가속 IP66 3-Arm 시제품으로 시범 성공률 96% 이상 목표.'],
+          tags: ['VLM / VLA', 'DP3 힘 제어', 'ROS 2 Humble', 'Isaac Lab', '월드 모델']
+        }
+      },
+      boolasia: {
+        zh: {
+          kicker: '03 / 商业化数据飞轮底座', title: '中飞布尔具身数据生态平台（bool.asia）',
+          desc: '独立完成全栈架构设计与端到端开发，以“平台派单撮合 + 零垫资背靠背结算”实现现金流造血，同时排他性沉淀真机数据资产。',
+          bullets: ['产能规模：链接 320+ 协同团队与 28+ 核心专业团队，自研八目穿戴设备，沉淀 80,000+ 小时真机视频与 7.6 亿帧多模态资产。', '质量效率：覆盖 3D 点云、4D 时序、关节轨迹等 12+ 类标注；三级质检实现 3.4 天平均交付与 98.3%–99.2% 一次通过率。', '标杆客户：百度、阿里达摩院、京东物流、比亚迪、奇瑞、零跑、美团、快手、中国重汽、徐工集团。'],
+          tags: ['全栈开发', 'bool.asia', '多模态数采', '三级质检', '数据合规']
+        },
+        en: {
+          kicker: '03 / DATA FLYWHEEL', title: 'Bool.asia Embodied Data Ecosystem Platform',
+          desc: 'Independently architected full-stack data platform generating cash flow via zero-advance matching while building proprietary robot datasets.',
+          bullets: ['Scale: 320+ partner teams, self-developed 8-camera EGO rig, 80,000+ hours of video and 760M+ multimodal frames.', 'Quality: 12+ annotation modalities (3D point cloud, 4D temporal, joint trajectories); 3.4-day avg delivery with 98.3%–99.2% first-pass rate.', 'Clients: Baidu, Alibaba DAMO, JD Logistics, BYD, Chery, Leapmotor, Meituan, Kuaishou, SINOTRUK, XCMG.'],
+          tags: ['Full-Stack', 'bool.asia', 'Multimodal Data', '3-Tier QA', 'Compliance']
+        },
+        id: {
+          kicker: '03 / DATA FLYWHEEL', title: 'Platform Ekosistem Data Embodied (bool.asia)',
+          desc: 'Dibangun secara full-stack untuk menghasilkan arus kas sekaligus mengumpulkan aset data robotika multimodal.',
+          bullets: ['Skala: 320+ tim mitra, perangkat EGO 8-kamera buatan sendiri, 80.000+ jam video dan 760 juta+ frame.', 'Kualitas: 12+ modalitas anotasi (point cloud 3D, 4D, trajektori); pengiriman rata-rata 3,4 hari dengan tingkat lolos 98,3%–99,2%.', 'Klien: Baidu, Alibaba DAMO, JD Logistics, BYD, Chery, Leapmotor, Meituan, Kuaishou, SINOTRUK, XCMG.'],
+          tags: ['Full-Stack', 'bool.asia', 'Data Multimodal', 'QA 3-Tingkat', 'Kepatuhan']
+        },
+        ja: {
+          kicker: '03 / データフライホイール', title: '中飛ブール身体性データ基盤（bool.asia）',
+          desc: 'フルスタックで単独構築。データ受託でキャッシュフローを生み出しながら、自社モデル用の実機データを独占蓄積。',
+          bullets: ['規模：320以上の協力チームと自社開発8眼EGO機材により、80,000時間以上の実機動画・7.6億フレームを蓄積。', '品質：3D点群や関節軌跡など12種以上のアノテーションに対応。3段階検収で平均納期3.4日・初回合格率99.2%。', '顧客：Baidu、Alibaba DAMO、JD Logistics、BYD、Chery、Leapmotor、Meituan、Kuaishou、中国重汽、徐工集団。'],
+          tags: ['フルスタック', 'bool.asia', 'マルチモーダル', '3段階検収', 'データ準拠']
+        },
+        ko: {
+          kicker: '03 / 데이터 플라이휠', title: '중페이 불(bool.asia) 임바디드 데이터 플랫폼',
+          desc: '풀스택으로 단독 구축한 데이터 매칭 플랫폼으로, 안정적인 현금흐름과 독점적 로봇 학습 데이터를 동시에 확보합니다.',
+          bullets: ['규모: 320+ 협력 팀과 자체 제작 8안 EGO 장비로 80,000시간 이상 영상 및 7.6억 프레임 자산 축적.', '품질: 3D 포인트 클라우드·관절 궤적 등 12+ 모달리티 지원, 3단계 검수로 평균 3.4일 납품 및 99.2% 통과율 달성.', '고객사: 바이두, 알리바바 다모원, 징둥물류, BYD, 체리, 립모터, 메이퇀, 콰이쇼우, SINOTRUK, XCMG.'],
+          tags: ['풀스택 개발', 'bool.asia', '멀티모달 데이터', '3단계 검수', '데이터 컴플라이언스']
+        }
+      },
+      fluidindex: {
+        zh: {
+          kicker: '04 / 算力供给与高并发 API 网关', title: '流体索引（FluidIndex）API 中转站与超算算力网络',
+          desc: '依托济南柏泠科技与国家超算济南中心合作底座，打通顶级 GPU 算力供给与企业级大模型 API 统一调度网关。',
+          bullets: ['算力底座：对接国家超算济南中心 8 卡 HGX-B300 直供节点及海外半期货 B300 算力通道。', '网关架构：React/Vite 前端 + NestJS 核心网关，完整兼容 OpenAI 接口（/v1/models、/v1/chat/completions）。', '金融级可靠性：采用预占/结算双阶段账本、PostgreSQL 行级锁防止并发超扣，结合 Redis 实现跨实例限流。', '模型矩阵：聚合 DeepSeek V4/V4.1、Kimi K3、GLM 5.3、Seedance 等主流大模型渠道。'],
+          tags: ['NestJS', 'PostgreSQL', 'Redis', 'HGX-B300', 'OpenAI 兼容网关']
+        },
+        en: {
+          kicker: '04 / COMPUTE & GATEWAY', title: 'FluidIndex API Gateway & HGX-B300 Compute',
+          desc: 'Connecting NSCC Jinan GPU supply with a production-grade OpenAI-compatible LLM routing gateway.',
+          bullets: ['Compute Base: Direct 8-GPU HGX-B300 nodes via NSCC Jinan plus overseas semi-futures B300 capacity.', 'Gateway Stack: React/Vite + NestJS supporting standard /v1/models and /v1/chat/completions.', 'Ledger Integrity: Two-phase reserve/settle billing with PostgreSQL row locks and Redis cross-instance rate limiting.', 'Model Routing: Aggregates DeepSeek V4/V4.1, Kimi K3, GLM 5.3, and Seedance.'],
+          tags: ['NestJS', 'PostgreSQL', 'Redis', 'HGX-B300', 'OpenAI Compatible']
+        },
+        id: {
+          kicker: '04 / KOMPUTASI & GATEWAY', title: 'Gateway API FluidIndex & Suplai Komputasi B300',
+          desc: 'Menghubungkan suplai GPU NSCC Jinan dengan gateway routing LLM berstandar OpenAI.',
+          bullets: ['Basis Komputasi: Akses langsung node 8-GPU HGX-B300 di NSCC Jinan dan kanal semi-futures luar negeri.', 'Arsitektur Gateway: React/Vite + NestJS yang kompatibel penuh dengan endpoint OpenAI.', 'Keandalan Finansial: Buku besar dua tahap dengan PostgreSQL row-level locking dan rate-limiting Redis.', 'Model: Agregasi DeepSeek V4/V4.1, Kimi K3, GLM 5.3, dan Seedance.'],
+          tags: ['NestJS', 'PostgreSQL', 'Redis', 'HGX-B300', 'OpenAI API']
+        },
+        ja: {
+          kicker: '04 / 計算基盤・APIゲートウェイ', title: 'FluidIndex APIゲートウェイ＆B300計算供給',
+          desc: '国家スパコン済南センターの計算資源と企業向けOpenAI互換LLMゲートウェイを統合。',
+          bullets: ['計算基盤：国家スパコン済南の8基HGX-B300ノードおよび海外B300供給チャネルを接続。', 'ゲートウェイ：React/Vite + NestJSによりOpenAI互換API（/v1/chat/completions等）を実装。', '高信頼課金：PostgreSQL行ロックによる2段階引当決済とRedis分散レート制限を採用。', '対応モデル：DeepSeek V4/V4.1、Kimi K3、GLM 5.3、Seedance等を統合。'],
+          tags: ['NestJS', 'PostgreSQL', 'Redis', 'HGX-B300', 'OpenAI互換']
+        },
+        ko: {
+          kicker: '04 / 컴퓨팅·API 게이트웨이', title: 'FluidIndex API 게이트웨이 & B300 슈퍼컴 공급',
+          desc: '국가 슈퍼컴퓨팅 지난센터 GPU 인프라와 엔터프라이즈급 OpenAI 호환 LLM 라우팅 게이트웨이를 결합했습니다.',
+          bullets: ['연산 인프라: 지난 슈퍼컴 8-GPU HGX-B300 노드 직공급 및 해외 B300 선물 채널 연계.', '게이트웨이: React/Vite + NestJS 기반의 완전한 OpenAI 호환 인터페이스 제공.', '금융급 정합성: PostgreSQL 행 잠금 기반 2단계 예약·정산 원장 및 Redis 분산 처리율 제한.', '모델 통합: DeepSeek V4/V4.1, Kimi K3, GLM 5.3, Seedance 등 주요 모델 라우팅.'],
+          tags: ['NestJS', 'PostgreSQL', 'Redis', 'HGX-B300', 'OpenAI 호환']
+        }
+      },
+      moonframing: {
+        zh: {
+          kicker: '05 / 开源网络基础设施', title: 'MoonFraming 纯 MoonBit 字节流分帧库',
+          desc: '黑客松生态基础设施参赛项目，专注于无运行时绑定的高性能字节流解析与分帧还原。',
+          bullets: ['纯 MoonBit 实现：不绑定特定 socket 或异步运行时，精准解决 TCP / WebSocket / 文件流粘包与半包问题。', '多协议支持：uLEB128 长度头（单帧/批量/线性增量解码）、1–4 字节固定宽度长度头及单/多字节分隔符。', '安全与跨端：内置单帧与缓冲双重安全预算、可选 IEEE CRC-32 流式校验，支持 Wasm、Wasm-GC 与 JS 后端。'],
+          tags: ['MoonBit', 'Wasm / Wasm-GC', 'uLEB128', 'CRC-32', '开源项目']
+        },
+        en: {
+          kicker: '05 / OPEN SOURCE', title: 'MoonFraming: Pure MoonBit Stream Framing Library',
+          desc: 'Runtime-agnostic byte-stream framing library written in pure MoonBit for WebAssembly and JS ecosystems.',
+          bullets: ['Zero Runtime Lock-in: Decoupled from sockets/async runtimes for TCP, WebSocket, and file streams.', 'Framing Modes: uLEB128 varint headers (single/batch/incremental), 1–4B fixed-width headers, and byte delimiters.', 'Safety & Targets: Dual frame/buffer safety budgets, streaming IEEE CRC-32, targeting Wasm, Wasm-GC, and JS.'],
+          tags: ['MoonBit', 'Wasm / Wasm-GC', 'uLEB128', 'CRC-32', 'Open Source']
+        },
+        id: {
+          kicker: '05 / OPEN SOURCE', title: 'MoonFraming: Pustaka Framing Byte-Stream MoonBit',
+          desc: 'Pustaka infrastruktur jaringan dalam MoonBit murni tanpa ketergantungan runtime.',
+          bullets: ['Tanpa Ikatan Runtime: Memecahkan masalah framing pada aliran TCP, WebSocket, dan file.', 'Dukungan Protokol: Header uLEB128 (inkremental/batch), header panjang tetap 1–4 byte, dan delimiter.', 'Keamanan & Target: Batas anggaran frame ganda, verifikasi IEEE CRC-32, target Wasm, Wasm-GC, dan JS.'],
+          tags: ['MoonBit', 'Wasm / Wasm-GC', 'uLEB128', 'CRC-32', 'Open Source']
+        },
+        ja: {
+          kicker: '05 / オープンソース', title: 'MoonFraming 純MoonBitバイトストリーム分割ライブラリ',
+          desc: 'ランタイム非依存の純MoonBit製バイトストリーム・フレーミングライブラリ。',
+          bullets: ['ゼロ依存：特定のソケットや非同期ランタイムに縛られず、TCP / WebSocketの粘着パケットを解決。', 'プロトコル対応：uLEB128可変長ヘッダ、1–4バイト固定長ヘッダ、区切り文字に対応。', '安全性と出力：二重安全バジェットとIEEE CRC-32検証を備え、Wasm / Wasm-GC / JSへコンパイル可能。'],
+          tags: ['MoonBit', 'Wasm / Wasm-GC', 'uLEB128', 'CRC-32', 'OSS']
+        },
+        ko: {
+          kicker: '05 / 오픈소스', title: 'MoonFraming 순수 MoonBit 바이트 스트림 프레이밍',
+          desc: '특정 런타임에 종속되지 않는 순수 MoonBit 기반 고성능 바이트 스트림 프레이밍 라이브러리입니다.',
+          bullets: ['런타임 독립: 소켓이나 비동기 런타임에 종속되지 않고 TCP/WebSocket 패킷 프레이밍 처리.', '프로토콜 지원: uLEB128 가변 길이 헤더, 1–4바이트 고정 길이 헤더, 구분자 프레이밍 지원.', '안전성 및 타겟: 이중 안전 예산 및 스트리밍 IEEE CRC-32 검증, Wasm/Wasm-GC/JS 타겟 지원.'],
+          tags: ['MoonBit', 'Wasm / Wasm-GC', 'uLEB128', 'CRC-32', '오픈소스']
+        }
+      },
+      browserpilot: {
+        zh: {
+          kicker: '06 / 出海 AI Agent 与专项交付', title: 'BrowserPilot 浏览器自动化 Agent 与海外专项',
+          desc: '面向国际化商业场景的全栈 AI 浏览器自动化 Agent 平台，以及高标准跨国数据与专家系统外包交付。',
+          bullets: ['BrowserPilot 架构：Next.js 16 + FastAPI + Playwright + PostgreSQL，通过 Multi-LLM ReAct Loop 实现复杂网页任务自主执行，集成 LemonSqueezy 全球订阅计费。', '印尼 ASR 语音数据纠错：按照严格英文供应商规范完成多维度语音转写质检与纠错交付。', 'Trace 专业软件专家合作：承担高复杂度专业软件任务评估与自动化基准构建。'],
+          tags: ['Next.js 16', 'FastAPI', 'Playwright', 'Multi-LLM ReAct', 'LemonSqueezy']
+        },
+        en: {
+          kicker: '06 / AI AGENT SAAS', title: 'BrowserPilot AI Agent SaaS & Global Delivery',
+          desc: 'Full-stack autonomous browser agent SaaS paired with cross-border speech and expert software evaluation projects.',
+          bullets: ['BrowserPilot Stack: Next.js 16 + FastAPI + Playwright + PostgreSQL with Multi-LLM ReAct Loop and LemonSqueezy global billing.', 'Indonesia ASR Correction: Delivered high-precision speech transcription QA under strict vendor specifications.', 'Trace Expert Tasks: Executed complex professional software workflows and evaluation benchmarks.'],
+          tags: ['Next.js 16', 'FastAPI', 'Playwright', 'ReAct Loop', 'LemonSqueezy']
+        },
+        id: {
+          kicker: '06 / AI AGENT SAAS', title: 'BrowserPilot AI Agent SaaS & Proyek Global',
+          desc: 'Platform SaaS otomatisasi browser AI full-stack beserta pengiriman proyek data suara dan perangkat lunak lintas negara.',
+          bullets: ['Arsitektur BrowserPilot: Next.js 16 + FastAPI + Playwright + PostgreSQL dengan Multi-LLM ReAct Loop dan penagihan LemonSqueezy.', 'Koreksi Data ASR Indonesia: Menyelesaikan jaminan kualitas transkripsi suara sesuai standar vendor internasional.', 'Proyek Trace: Menangani tugas ahli perangkat lunak profesional dengan standar akurasi tinggi.'],
+          tags: ['Next.js 16', 'FastAPI', 'Playwright', 'ReAct Loop', 'LemonSqueezy']
+        },
+        ja: {
+          kicker: '06 / AIエージェント SaaS', title: 'BrowserPilot ブラウザ自動化AI＆海外特化案件',
+          desc: 'グローバル向けAIブラウザ自動化SaaSと、高品質なクロスボーダー音声・専門ソフト案件の実装。',
+          bullets: ['BrowserPilot：Next.js 16 + FastAPI + Playwright + PostgreSQL に Multi-LLM ReAct Loop と LemonSqueezy 決済を統合。', 'インドネシアASR音声校正：厳格な英語仕様に基づく音声書き起こし品質検査・校正を完遂。', 'Trace専門ソフト案件：高難度の専門ソフトウェア評価タスクおよび自動化基準を構築。'],
+          tags: ['Next.js 16', 'FastAPI', 'Playwright', 'ReAct Loop', 'LemonSqueezy']
+        },
+        ko: {
+          kicker: '06 / AI 에이전트 SaaS', title: 'BrowserPilot 브라우저 자동화 AI & 글로벌 프로젝트',
+          desc: '글로벌 시장을 겨냥한 풀스택 AI 브라우저 자동화 SaaS 및 크로스보더 음성·전문 소프트웨어 과업을 수행했습니다.',
+          bullets: ['BrowserPilot: Next.js 16 + FastAPI + Playwright + PostgreSQL 기반 Multi-LLM ReAct 루프 및 LemonSqueezy 결제 통합.', '인도네시아 ASR 음성 교정: 엄격한 영문 벤더 규격에 맞춘 다차원 음성 전사 품질 검수 및 교정 납품.', 'Trace 전문 소프트웨어 과업: 고난도 전문 소프트웨어 평가 및 자동화 벤치마크 구축.'],
+          tags: ['Next.js 16', 'FastAPI', 'Playwright', 'ReAct Loop', 'LemonSqueezy']
+        }
+      }
+    };
+
+    function setLang(lang) {
+      if (!i18n[lang]) return;
+      currentLang = lang;
+      localStorage.setItem('morris_profile_lang', lang);
+      const t = i18n[lang];
+
+      document.documentElement.lang = t.htmlLang;
+      document.title = t.pageTitle;
+      document.getElementById('nav-brand-text').textContent = t.brand;
+
+      document.querySelectorAll('.lang-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.lang === lang);
+      });
+
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.dataset.i18n;
+        if (t[key] !== undefined) {
+          el.innerHTML = t[key];
+        }
+      });
+    }
+
+    setLang(currentLang);
+
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const projectCards = document.querySelectorAll('.project-card');
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const target = btn.dataset.filter;
+        projectCards.forEach(card => {
+          if (target === 'all' || card.dataset.category === target) card.classList.remove('hidden');
+          else card.classList.add('hidden');
+        });
+      });
+    });
+
+    function switchTab(panelId, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(panelId).classList.add('active');
+    }
+
+    function openModal(key) {
+      const d = modalData[key]?.[currentLang] || modalData[key]?.zh;
+      if (!d) return;
+      document.getElementById('m-kicker').textContent = d.kicker;
+      document.getElementById('m-title').textContent = d.title;
+      document.getElementById('m-desc').textContent = d.desc;
+      document.getElementById('m-bullets').innerHTML = d.bullets.map(b => `<li>${b}</li>`).join('');
+      document.getElementById('m-tags').innerHTML = d.tags.map(t => `<span class="tag">${t}</span>`).join('');
+      document.getElementById('project-modal').classList.add('open');
+    }
+
+    function closeModal(e) {
+      if (!e || e.target.id === 'project-modal' || e.target.classList.contains('modal-close')) {
+        document.getElementById('project-modal').classList.remove('open');
+      }
+    }
+
+    function copyText(text, type) {
+      navigator.clipboard.writeText(text).then(() => {
+        const toast = document.getElementById('toast');
+        const msg = type === 'phone' ? i18n[currentLang].copy_phone : i18n[currentLang].copy_email;
+        toast.textContent = msg + ': ' + text;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2200);
+      });
+    }
+
+    const canvas = document.getElementById('particle-canvas');
+    const ctx = canvas.getContext('2d');
+    let w, h, particles = [];
+    function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+    window.addEventListener('resize', resize);
+    resize();
+    for (let i = 0; i < 42; i++) {
+      particles.push({ x: Math.random() * w, y: Math.random() * h, vx: (Math.random() - 0.5) * 0.35, vy: (Math.random() - 0.5) * 0.35, r: Math.random() * 1.8 + 0.8 });
+    }
+    function draw() {
+      ctx.clearRect(0, 0, w, h);
+      particles.forEach((p, idx) => {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0 || p.x > w) p.vx *= -1;
+        if (p.y < 0 || p.y > h) p.vy *= -1;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(165, 123, 255, 0.55)'; ctx.fill();
+        for (let j = idx + 1; j < particles.length; j++) {
+          const p2 = particles[j];
+          const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+          if (dist < 145) {
+            ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y);
+            ctx.strokeStyle = `rgba(71, 0, 204, ${(1 - dist / 145) * 0.42})`; ctx.lineWidth = 1; ctx.stroke();
+          }
+        }
+      });
+      requestAnimationFrame(draw);
+    }
+    draw();
+  </script>
+</body>
+</html>
